@@ -166,8 +166,6 @@ h2 span{font-size:15px;font-weight:400;color:var(--l2);letter-spacing:-.2px}
 .rows .rw{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .rows .rw span:first-child{color:var(--ink)}
 .rows .rw small{display:block;font-size:13px;color:var(--l2);margin-top:2px}
-.lh .lf{display:block;font-size:13px;color:var(--l2);margin-top:4px}
-.lh .lf b{display:inline;font-size:13px;color:var(--ink);font-weight:600}
 .rows .rw.tot{font-weight:600;font-size:17px;border-bottom:0}
 .rows .rw.tot span:first-child{color:var(--ink)}
 
@@ -518,8 +516,7 @@ function plan(){
   const leaveEff=leave<win.fDep-180&&leave<240?leave+1440:leave,start=leaveEff<win.fDep?win.fDep:leaveEff;
   const m=Math.round(total),hh=Math.floor(m/60),mm=m%60;
   const rib=steps.map(s=>s.ty==='leg'?`<i style="--c:${s.line.c};flex:${s.t.toFixed(1)}"></i>`:`<i class="w" style="flex:${s.t.toFixed(1)}"></i>`).join('');
-  const legFare=g=>{const t=g.fg;if(!t)return'';if(t.legs[0]!==g)return 'same ticket';return t.f==null?'fare at station':money(t.f)};
-  const lg=legs.map(g=>`<span style="--c:${g.line.c}"><i></i>${esc(tiny(g.line))} ${durA(g.t)} \u00b7 ${legFare(g)}</span>`).join('');
+  const lg=legs.map(g=>`<span style="--c:${g.line.c}"><i></i>${esc(tiny(g.line))} ${durA(g.t)}</span>`).join('');
   const p0=platformFor(legs[0]);
   let h=`<div class="top"><div><p class="od">${esc(ST.get(sel.from).name)} → ${esc(ST.get(sel.to).name)}</p><p class="big num">${hh?hh+'<small>h</small>':''}${mm}<small>min</small></p><div class="span num">${clock(start)} – ${clock(start+total)}</div></div><button class="save" id="star" aria-pressed="${isFav}" aria-label="${isFav?'Remove from saved':'Save trip'}">${ic('bm')}</button></div>
   <div class="ribbon">${rib}</div><div class="legs">${lg}</div>
@@ -533,7 +530,7 @@ function plan(){
   for(let si=0;si<steps.length;si++){const s=steps[si];
     if(s.ty==='leg'){
       const l=s.line,dir=towards(s),n=s.keys.length-1,col=collapsed.has(li),pf=platformFor(s),lastLeg=!steps.slice(si+1).some(x=>x.ty==='leg'),nx=steps[si+1];
-      h+=`<div class="leg${col?' col':''}" style="--c:${l.c};--tx:${l.tx}" data-leg="${li}"><div class="lh"><i></i><span class="g"><b>${esc(short(l))}</b><span class="to">${pf?`<span class="pf">Platform ${esc(pf)}</span>`:''}<span>${dir.ring?'Ring, via '+esc(dir.via):'Towards '+esc(dir.term)}</span></span>${(()=>{const T=s.fg;if(!T)return'';const others=T.legs.filter(x=>x!==s).map(x=>short(x.line));const sysn=SYS[T.sys].n;if(T.legs[0]!==s)return `<span class="lf">Fare: same ${esc(sysn)} ticket as the ${esc(short(T.legs[0].line))}</span>`;if(T.f==null)return `<span class="lf">Fare: buy at the station (not included)</span>`;return `<span class="lf">Fare <b class="num">${money(T.f)}</b> \u00b7 ${esc(sysn)} ticket${others.length?', also covers the '+esc(others.join(' and ')):''}</span>`})()}</span>${n>1?`<button class="disc" aria-expanded="${!col}">Ride ${n} stations${ic('down')}</button>`:'<span class="disc" style="cursor:default">Ride 1 station</span>'}</div>`;
+      h+=`<div class="leg${col?' col':''}" style="--c:${l.c};--tx:${l.tx}" data-leg="${li}"><div class="lh"><i></i><span class="g"><b>${esc(short(l))}</b><span class="to">${pf?`<span class="pf">Platform ${esc(pf)}</span>`:''}<span>${dir.ring?'Ring, via '+esc(dir.via):'Towards '+esc(dir.term)}</span></span></span>${n>1?`<button class="disc" aria-expanded="${!col}">Ride ${n} stations${ic('down')}</button>`:'<span class="disc" style="cursor:default">Ride 1 station</span>'}</div>`;
       s.keys.forEach((k,i)=>{const st=ST.get(k),end=i===0||i===n;if(i)t+=s.hops[i-1];
         h+=`<div class="r${i===0?' first':''}${i===n?' last':''}${end?' end':' mid'}"><time class="num">${clock(t)}</time><span class="rl">${i?`<b class="no">${i}</b>`:''}</span><span class="nm">${esc(st.name)}${end?xdots(others(st,l)):''}</span><span class="d num">${i===0?'Board':'+'+Math.max(1,Math.round(s.hops[i-1]))+' min'}</span></div>`});
       if(!lastLeg)h+=exitsHtml(s.keys[n],false,nx&&nx.ty==='x'&&(nx.walk||nx.sys)?'Exits to the walkway':'Exits here');
