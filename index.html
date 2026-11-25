@@ -20,14 +20,17 @@
    COLOUR and TYPE: white and near-black, soft grey fields, one blue accent; metro colours only on ribbon, rails and dots; San Francisco via the system stack
    LAYOUT: single calm column on phones; planner left and journey right on wide screens; tab bar on phones, slim sidebar on Mac */
 :root{color-scheme:light dark;
---bg:#fff;--soft:#f5f5f7;--soft2:#ebebef;--ink:#1d1d1f;--l2:#6e6e73;--l3:#aeaeb2;--hair:#e5e5ea;--blue:#0071e3;--warn:#c93400;--bar:rgba(255,255,255,.8);--shadow:rgba(0,0,0,.08);
+--bg:light-dark(#fff,#000);--soft:light-dark(#f5f5f7,#1c1c1e);--soft2:light-dark(#ebebef,#2c2c2e);
+--ink:light-dark(#1d1d1f,#f5f5f7);--l2:light-dark(#6e6e73,#a1a1a6);--l3:light-dark(#aeaeb2,#636366);
+--hair:light-dark(#e5e5ea,#2c2c2e);--blue:light-dark(#0071e3,#2997ff);--warn:light-dark(#c93400,#ff9f0a);
+--bar:light-dark(rgba(255,255,255,.8),rgba(0,0,0,.75));
 --sf:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Inter,"Segoe UI",Roboto,system-ui,sans-serif}
-@media(prefers-color-scheme:dark){:root{--bg:#000;--soft:#1c1c1e;--soft2:#2c2c2e;--ink:#f5f5f7;--l2:#a1a1a6;--l3:#636366;--hair:#2c2c2e;--blue:#2997ff;--warn:#ff9f0a;--bar:rgba(0,0,0,.75);--shadow:rgba(0,0,0,.6)}}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
 html{overscroll-behavior-y:none}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.35 var(--sf);letter-spacing:-.2px;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;overflow-x:clip;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.35 var(--sf);letter-spacing:-.2px;-webkit-font-smoothing:antialiased;overflow-x:clip;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
 button,input{font:inherit;color:inherit;letter-spacing:inherit}
 button{cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 a{color:inherit;text-decoration:none;-webkit-touch-callout:none;touch-action:manipulation}
@@ -75,7 +78,7 @@ h1{margin:6px 0 22px;font-size:34px;line-height:1.1;font-weight:700;letter-spaci
 .vl{position:absolute;left:24.5px;top:34px;height:calc(100% - 68px);border-left:1.5px solid var(--l3)}
 .fld input{flex:1;border:0;background:none;outline:none;font-size:17px;padding:0;min-height:44px;color:var(--ink)}
 .fld input::placeholder{color:var(--l3)}
-#swap{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:var(--bg);color:var(--ink);display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+#swap{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:0;background:var(--bg);color:var(--ink);display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 #swap .i{width:18px;height:18px}
 .menu{position:absolute;left:0;right:0;top:calc(100% + 8px);margin:0;padding:6px;list-style:none;background:var(--bg);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.16),0 0 0 .5px var(--hair);z-index:50;max-height:min(420px,60vh);overflow:auto;overscroll-behavior:contain}
 .menu:empty{display:none}
@@ -85,16 +88,15 @@ h1{margin:6px 0 22px;font-size:34px;line-height:1.1;font-weight:700;letter-spaci
 .dots{display:flex;gap:3px;width:34px;flex:none;flex-wrap:wrap}.dots i{width:8px;height:8px;border-radius:50%}
 .ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .ctl>.time,.ctl>.seg{grid-column:1/-1}
-.ctl .pill{justify-content:center;height:44px;border-radius:22px}
-.ctl .seg{height:44px;border-radius:22px;grid-auto-columns:1fr}.ctl .seg button{border-radius:19px}
+.ctl .pill{justify-content:center;height:40px;border-radius:20px}
+.ctl .seg{height:40px;border-radius:20px;grid-auto-columns:1fr}.ctl .seg button{border-radius:17px}
 .pill{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;border:0;background:var(--soft);font-size:15px;color:var(--ink);white-space:nowrap}
 .pill[aria-pressed=true]{background:var(--ink);color:var(--bg)}
-.pill.time{position:relative;padding:0 6px 0 16px;justify-content:space-between!important;color:var(--l2)}
-.pill.time #whenl{display:inline-flex;align-items:center;gap:8px;pointer-events:none}
-.pill.time #whenl .i{width:16px;height:16px}
-.pill.time.set #whenl{color:var(--ink)}
-.pill.time input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;font-size:16px;-webkit-appearance:none;appearance:none;cursor:pointer}
-.pill.time button{position:relative;z-index:1;border:0;background:none;color:var(--blue);font-size:15px;padding:0 10px;height:44px}
+.pill.time{padding:0 4px 0 16px;justify-content:flex-start!important}
+.pill.time input{flex:1}
+.pill.time input{border:0;background:none;outline:none;font-size:16px;padding:0;min-width:86px;color:var(--ink)}
+.pill.time input::-webkit-calendar-picker-indicator{opacity:.35}
+.pill.time button{border:0;background:none;color:var(--blue);font-size:15px;padding:0 10px;height:36px}
 .seg{display:inline-grid;grid-auto-flow:column;background:var(--soft);border-radius:18px;padding:3px;height:36px}
 .seg button{border:0;background:none;border-radius:15px;padding:0 13px;font-size:15px;color:var(--l2);white-space:nowrap}
 .seg button[aria-pressed=true]{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
@@ -102,18 +104,17 @@ h1{margin:6px 0 22px;font-size:34px;line-height:1.1;font-weight:700;letter-spaci
 /* result */
 .top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .od{font-size:15px;color:var(--l2);margin:0 0 6px}
-.big{font-size:clamp(56px,10vw,76px);line-height:1;font-weight:600;letter-spacing:-2.4px;margin:0;white-space:nowrap}
+.big{font-size:clamp(44px,8vw,64px);line-height:1;font-weight:600;letter-spacing:-2px;margin:0;white-space:nowrap}
 .big small{font-size:.42em;font-weight:500;letter-spacing:-.3px;color:var(--l2);margin:0 10px 0 4px}
 .big small:last-child{margin-right:0}
-.span{margin-top:10px;font-size:17px;color:var(--l2)}
-.span b{color:var(--ink);font-weight:600}
-.save{border:0;background:var(--soft);color:var(--ink);width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;margin-top:2px}
+.span{margin-top:8px;font-size:17px;color:var(--ink)}
+.save{border:0;background:var(--soft);color:var(--ink);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;margin-top:2px}
 .save[aria-pressed=true] .i{fill:currentColor}
 .ribbon{display:flex;gap:3px;height:8px;margin:28px 0 10px}
 .ribbon i{border-radius:4px;background:var(--c)}
 .ribbon .w{background:none;border-top:2px dotted var(--l3);height:0;margin-top:3px;border-radius:0}
-.legs{display:flex;flex-wrap:wrap;gap:0 16px;font-size:13px;color:var(--l2);margin:-6px 0}
-.legs button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:0;min-height:44px;font-size:13px;color:var(--l2)}
+.legs{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--l2)}
+.legs span{display:inline-flex;align-items:center;gap:6px}
 .legs i{width:8px;height:8px;border-radius:50%;background:var(--c)}
 .facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:30px;border-top:.5px solid var(--hair);border-bottom:.5px solid var(--hair)}
 .facts div{padding:14px 0}
@@ -134,15 +135,14 @@ h2 span{font-size:15px;font-weight:400;color:var(--l2);letter-spacing:-.2px}
 .lh b{font-weight:600;font-size:17px}
 .lh .g{flex:1}.lh .g b{display:block}.lh .to{display:block;color:var(--l2);font-size:14px;margin-top:1px}
 .lh i{align-self:flex-start;margin-top:7px}
-.disc{border:0;background:none;color:var(--l2);font-size:14px;min-height:44px;padding:0 0 0 10px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.disc{border:0;background:none;color:var(--l2);font-size:14px;padding:6px 0 6px 10px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
 .disc .i{width:13px;height:13px;stroke-width:2.4;transition:transform .25s}
 .leg.col .disc .i{transform:rotate(-90deg)}
 .leg.col .r.mid{display:none}
-.r .d .tot,.leg.col .r .d .hop{display:none}.leg.col .r .d .tot{display:inline}
 .r{display:grid;grid-template-columns:84px 28px minmax(0,1fr) auto;align-items:center;min-height:38px}
 .r time{text-align:right;padding-right:12px;font-size:13px;color:var(--l3);white-space:nowrap;overflow:hidden}
 .r .rl{align-self:stretch;position:relative}
-.r .rl::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:5px;margin-left:-2.5px;background:var(--c)}
+.r .rl::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--c)}
 .r.first .rl::before{top:50%}.r.last .rl::before{bottom:50%}
 .leg.col .r.first .rl::before{bottom:0}
 .r.end{min-height:44px}
@@ -156,19 +156,12 @@ h2 span{font-size:15px;font-weight:400;color:var(--l2);letter-spacing:-.2px}
 .r.last .no{background:var(--c);color:var(--tx);border-color:var(--c)}
 .r.end:has(.no) .rl::after{display:none}
 .xd{display:inline-flex;gap:3px}.xd i{width:7px;height:7px;border-radius:50%;background:var(--c)}
-.xf{display:grid;grid-template-columns:84px 28px minmax(0,1fr);align-items:center;min-height:64px;color:var(--l2);font-size:14px;margin:4px 0}
-.xf b{display:block;color:var(--ink);font-size:16px;font-weight:600}
-.xf small{display:block;font-size:13.5px;color:var(--l2);margin-top:2px;line-height:1.35}
-.xf .pf{margin-right:2px;vertical-align:1px}
-.xf .rl .i{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;padding:2px;box-sizing:content-box;background:var(--bg);color:var(--l2);border-radius:50%;z-index:1}
+.xf{display:grid;grid-template-columns:84px 28px minmax(0,1fr);align-items:center;min-height:52px;color:var(--l2);font-size:14px}
 .xf time{text-align:right;padding-right:12px;font-size:13px;color:var(--l3);white-space:nowrap}
 .xf .rl{align-self:stretch;position:relative}
-.xf .rl::before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:2.5px dotted var(--l3);margin-left:-1.25px}
+.xf .rl::before{content:"";position:absolute;left:50%;top:4px;bottom:4px;border-left:2px dotted var(--l3);margin-left:-1px}
 .xf span:last-child{padding-left:14px}
 
-#toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,12px);background:var(--ink);color:var(--bg);font-size:15px;padding:11px 18px;border-radius:22px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:60;max-width:calc(100% - 40px);text-align:center}
-#toast.on{opacity:1;transform:translate(-50%,0)}
-@media(min-width:900px){#toast{bottom:32px;margin-left:105px}}
 /* fare */
 .rows .rw{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:.5px solid var(--hair);font-size:15px}
 .rows .rw span:first-child{color:var(--ink)}
@@ -179,21 +172,11 @@ h2 span{font-size:15px;font-weight:400;color:var(--l2);letter-spacing:-.2px}
 /* empty */
 .empty .big{font-size:clamp(34px,6vw,48px);letter-spacing:-1.2px;font-weight:600;line-height:1.08;white-space:normal;text-wrap:balance}
 .empty p{color:var(--l2);margin:12px 0 30px;max-width:40ch}
-.empty.start .big{color:var(--l3)}
-.empty h3{font-size:13px;font-weight:600;color:var(--l2);text-transform:uppercase;letter-spacing:.4px;margin:0 0 4px}
 .link{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:none;border-top:.5px solid var(--hair);padding:15px 0;text-align:left;font-size:17px;color:var(--ink)}
 .link:last-child{border-bottom:.5px solid var(--hair)}
 .link small{color:var(--l2);font-size:13px;display:block;margin-top:2px}
 .link .i{width:15px;height:15px;color:var(--l3);stroke-width:2.2}
 .link:hover{color:var(--blue)}
-.sw{position:relative;overflow:hidden;touch-action:pan-y}
-.sw>.swc{position:relative;z-index:1;background:var(--bg);transition:transform .25s ease}
-.sw.drag>.swc{transition:none}
-.sw>.del{position:absolute;inset:0 0 0 auto;width:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;background:var(--warn);color:#fff;font-size:15px;font-weight:600}
-.sw.gone{transition:height .25s ease,opacity .25s;opacity:0}
-.menu li .loc{width:34px;display:grid;place-items:center;color:var(--blue)}
-.menu li.hd{min-height:30px;padding:8px 12px 2px;font-size:12px;font-weight:600;color:var(--l2);text-transform:uppercase;letter-spacing:.4px;cursor:default}
-.menu li.hd:hover{background:none}
 
 /* lines */
 .lr{display:flex;align-items:center;gap:14px;padding:15px 0;border-top:.5px solid var(--hair)}
@@ -213,7 +196,7 @@ h2 span{font-size:15px;font-weight:400;color:var(--l2);letter-spacing:-.2px}
 #ldir{display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:520px;height:auto;min-height:42px;border-radius:21px;margin-bottom:22px}
 #ldir button{white-space:normal;line-height:1.2;padding:7px 10px;border-radius:18px;font-size:14px}
 .lhd{display:flex;justify-content:space-between;font-size:12px;color:var(--l3);padding:0 0 8px;border-bottom:.5px solid var(--hair);margin-bottom:8px}
-.rm{border:0;background:none;color:var(--l3);width:44px;height:44px;display:grid;place-items:center;flex:none}
+.rm{border:0;background:none;color:var(--l3);width:40px;height:40px;display:grid;place-items:center;flex:none}
 .pf{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:10px;background:var(--c);color:var(--tx);font-size:12px;font-weight:700;letter-spacing:0;white-space:nowrap}
 .lh .to{display:flex!important;flex-wrap:wrap;align-items:center;gap:4px 8px}
 .ex{margin:6px 0 2px 112px;border-top:.5px solid var(--hair);border-bottom:.5px solid var(--hair)}
@@ -228,9 +211,6 @@ h2 span{font-size:15px;font-weight:400;color:var(--l2);letter-spacing:-.2px}
 .gl li b{flex:none;min-width:26px;height:22px;padding:0 7px;border-radius:11px;background:var(--soft);font-size:12.5px;font-weight:600;display:inline-grid;place-items:center;letter-spacing:0}
 .gl li.cl{color:var(--l3)}
 .gnote{font-size:13px;color:var(--l2);margin:6px 0 0}
-.gf{display:block;width:100%;height:44px;border:0;border-radius:12px;background:var(--soft);padding:0 14px;font-size:16px;color:var(--ink);outline:none;margin:4px 0 8px;-webkit-appearance:none}
-.gf::placeholder{color:var(--l3)}
-.gl li.hit b{background:var(--ink);color:var(--bg)}
 .dest{margin-top:10px}
 .ldet .r .pp{display:block;width:100%;font-size:12px;color:var(--l3);font-weight:400}
 @media(max-width:520px){.ex{margin-left:0}}
@@ -240,8 +220,7 @@ details.about summary::-webkit-details-marker{display:none}
 details.about a{color:var(--blue)}
 @media(max-width:520px){.r{grid-template-columns:76px 26px minmax(0,1fr) auto}.xf{grid-template-columns:76px 26px minmax(0,1fr)}.r time,.xf time{padding-right:10px}.r .nm{padding-left:12px;font-size:14.5px}.r.end .nm{font-size:16px}.r.end time{font-size:14px}.r .d{font-size:12px;padding-left:6px}}
 @media(max-width:360px){.r{grid-template-columns:70px 24px minmax(0,1fr) auto}.xf{grid-template-columns:70px 24px minmax(0,1fr)}}
-::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}
-@media(prefers-reduced-motion:no-preference){#res:not(.still)>*{animation:fi .4s ease both}#res.still .ribbon i{animation:none}.ribbon i{animation:gr .6s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}@keyframes fi{from{opacity:0}}@keyframes gr{from{transform:scaleX(0)}}}
+@media(prefers-reduced-motion:no-preference){#res>*{animation:fi .4s ease both}.ribbon i{animation:gr .6s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}@keyframes fi{from{opacity:0}}@keyframes gr{from{transform:scaleX(0)}}}
 </style>
 </head>
 <body>
@@ -251,7 +230,6 @@ details.about a{color:var(--blue)}
   <a href="#lines" id="n-lines"><span data-ic="list"></span>Lines</a>
   <a href="#saved" id="n-saved"><span data-ic="bm"></span>Saved</a>
 </nav>
-<label id="hpl" aria-hidden="true" style="position:fixed;left:-200px;top:0;opacity:0;pointer-events:none"><input type="checkbox" switch tabindex="-1"></label>
 <div class="app">
 <header class="navbar" id="nb"><span id="backslot"></span><span class="t" id="nbt">Metro Planner</span><span></span></header>
 <main class="wrap">
@@ -269,7 +247,7 @@ details.about a{color:var(--blue)}
           <ul class="menu" id="m-from" role="listbox"></ul><ul class="menu" id="m-to" role="listbox"></ul>
         </div>
         <div class="ctl">
-          <label class="pill time" id="whenp"><span id="whenl"></span><input id="when" type="time" aria-label="Leave at"><button type="button" id="now" hidden>Now</button></label>
+          <label class="pill time"><span style="color:var(--l2)">Leave</span><input id="when" type="time" aria-label="Leave at"><button type="button" id="now">Now</button></label>
           <div class="seg" role="group" aria-label="Route preference"><button type="button" data-mode="fast" aria-pressed="true">Fastest</button><button type="button" data-mode="few" aria-pressed="false">Fewer changes</button></div>
           <button type="button" class="pill" id="sun" aria-pressed="false">Sunday</button>
           <button type="button" class="pill" id="card" aria-pressed="false">Smart card</button>
@@ -427,17 +405,7 @@ swap:'<path d="M8 4v15M4.5 15.5 8 19l3.5-3.5M16 20V5M12.5 8.5 16 5l3.5 3.5"/>',
 chev:'<path d="m9 5.5 6.5 6.5L9 18.5"/>',
 down:'<path d="m5.5 9 6.5 6.5L18.5 9"/>',
 back:'<path d="M15 4.5 7.5 12l7.5 7.5"/>',
-x:'<path d="m7 7 10 10M17 7 7 17"/>',
-loc:'<path d="M20 4 3.5 10.6l7.1 2.8 2.8 7.1L20 4z"/>',
-walk:'<circle cx="13" cy="4.5" r="1.6"/><path d="m9 21 2.5-6.5M14.5 21l-2.2-6 .9-5.2-3.6 1.6L8 14M13.2 9.8l1.8 3.2 3 1"/>',
-clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'};
-/* station coordinates from OpenStreetMap (Nov 2026), for 'nearest station' */
-const CO={"Shaheed Sthal (New Bus Adda)":[28.67064,77.41547],"Hindon River":[28.67343,77.40654],"Arthala":[28.677,77.39189],"Mohan Nagar":[28.67854,77.384],"Shyam Park":[28.67823,77.37065],"Raj Bagh":[28.67709,77.34683],"Shaheed Nagar":[28.67666,77.33392],"Dilshad Garden":[28.67587,77.32145],"Jhilmil":[28.67572,77.31239],"Mansarovar Park":[28.67538,77.30087],"Shahdara":[28.67343,77.28989],"Welcome":[28.67179,77.27785],"Seelampur":[28.66982,77.26681],"Shastri Park":[28.66843,77.25053],"Kashmere Gate":[28.66745,77.22825],"Tis Hazari":[28.66716,77.21663],"Pulbangash":[28.66641,77.20742],"Pratap Nagar":[28.66672,77.1989],"Shastri Nagar":[28.67009,77.18186],"Inderlok":[28.67359,77.17035],"Kanhaiya Nagar":[28.68241,77.16478],"Keshav Puram":[28.68893,77.16168],"Netaji Subhash Place":[28.69605,77.15249],"Kohat Enclave":[28.69804,77.14054],"Madhuban Chowk#red":[28.70327,77.13225],"Rohini":[28.70758,77.126],"Dr. Baba Saheb Ambedkar Hospital":[28.71496,77.11539],"Rithala":[28.72081,77.10718],"Samaypur Badli":[28.74464,77.13827],"Rohini Sector 18, 19":[28.73838,77.13985],"Haiderpur Badli Mor":[28.72994,77.1491],"Jahangirpuri":[28.72597,77.16266],"Adarsh Nagar":[28.71658,77.17042],"Azadpur":[28.70578,77.18195],"Model Town":[28.70271,77.19399],"Vishwavidyalaya":[28.69508,77.21475],"Vidhan Sabha":[28.68632,77.22173],"Civil Lines":[28.67685,77.22503],"Chandni Chowk":[28.65842,77.23034],"New Delhi":[28.64348,77.22274],"Rajiv Chowk":[28.63271,77.21931],"Patel Chowk":[28.62297,77.21403],"Central Secretariat":[28.61588,77.21228],"Seva Teerth":[28.60951,77.2118],"Lok Kalyan Marg":[28.59735,77.2111],"Jor Bagh":[28.58651,77.21253],"Dilli Haat - INA":[28.57365,77.20759],"AIIMS":[28.56686,77.20781],"Green Park":[28.55801,77.20679],"Hauz Khas":[28.54426,77.20671],"Malviya Nagar":[28.52907,77.20482],"Saket":[28.52117,77.20222],"Qutab Minar":[28.51295,77.18645],"Chhatarpur":[28.50672,77.175],"Sultanpur":[28.49912,77.16137],"Ghitorni":[28.49375,77.14919],"Arjan Garh":[28.48074,77.12576],"Guru Dronacharya":[28.48202,77.10227],"Sikanderpur":[28.48127,77.093],"MG Road":[28.47955,77.07989],"IFFCO Chowk":[28.47233,77.07242],"Millennium City Centre Gurugram":[28.45934,77.07266],"Dwarka Sector 21":[28.55192,77.05856],"Dwarka Sector 8":[28.56561,77.06704],"Dwarka Sector 9":[28.57427,77.06533],"Dwarka Sector 10":[28.58106,77.0575],"Dwarka Sector 11":[28.58644,77.04944],"Dwarka Sector 12":[28.59224,77.04073],"Dwarka Sector 13":[28.59701,77.03354],"Dwarka Sector 14":[28.60222,77.02598],"Dwarka-Kakrola":[28.61589,77.02243],"Dwarka Mor":[28.61931,77.03328],"Nawada":[28.62028,77.04508],"Uttam Nagar West":[28.62176,77.05571],"Uttam Nagar East":[28.62485,77.06529],"Janakpuri West":[28.62895,77.07795],"Janakpuri East":[28.63302,77.08676],"Tilak Nagar":[28.63655,77.0965],"Subhash Nagar":[28.64046,77.10518],"Tagore Garden":[28.64373,77.11282],"Rajouri Garden":[28.65119,77.12426],"Ramesh Nagar":[28.65274,77.13165],"Moti Nagar":[28.65786,77.14243],"Kirti Nagar":[28.65575,77.15066],"Shadipur":[28.65158,77.15826],"Patel Nagar":[28.64501,77.16928],"Rajendra Place":[28.6425,77.17828],"Karol Bagh":[28.64401,77.18852],"Jhandewalan":[28.64432,77.19992],"Ramakrishna Ashram Marg":[28.63924,77.20858],"Mandi House":[28.62561,77.2342],"Supreme Court":[28.62348,77.24253],"Indraprastha":[28.6206,77.24955],"Yamuna Bank":[28.62331,77.26801],"Akshardham":[28.61793,77.27942],"Mayur Vihar-I":[28.60364,77.29093],"Mayur Vihar Extension":[28.59419,77.29462],"New Ashok Nagar":[28.58909,77.30151],"Noida Sector 15":[28.58488,77.31161],"Noida Sector 16":[28.57808,77.31778],"Noida Sector 18":[28.57076,77.32608],"Botanical Garden":[28.56391,77.33384],"Noida City Centre":[28.57473,77.35616],"Noida Sector 34":[28.58025,77.36349],"Noida Sector 52":[28.58687,77.37302],"Noida Sector 61":[28.59759,77.37227],"Noida Sector 59":[28.60653,77.37268],"Noida Sector 62":[28.61699,77.37359],"Noida Electronic City":[28.62826,77.375],"Laxmi Nagar":[28.6306,77.27752],"Nirman Vihar":[28.63646,77.28681],"Preet Vihar":[28.64142,77.29528],"Karkarduma":[28.64934,77.30607],"Anand Vihar":[28.64683,77.31587],"Kaushambi":[28.64529,77.32434],"Vaishali":[28.64967,77.33957],"Ashok Park Main":[28.6716,77.15529],"Punjabi Bagh":[28.673,77.14612],"Punjabi Bagh West":[28.67277,77.1392],"Shivaji Park":[28.67503,77.13047],"Madipur":[28.67648,77.11936],"Paschim Vihar East":[28.67736,77.11228],"Paschim Vihar West":[28.6786,77.10222],"Peeragarhi":[28.67981,77.09268],"Udyog Nagar":[28.6811,77.08085],"Nangloi":[28.6824,77.06473],"Nangloi Railway Station":[28.6822,77.05625],"Rajdhani Park":[28.68231,77.04394],"Mundka":[28.68243,77.03057],"Mundka Industrial Area":[28.68337,77.01715],"Ghevra":[28.68524,76.99616],"Tikri Kalan":[28.68688,76.97721],"Tikri Border":[28.68803,76.96408],"Pandit Shree Ram Sharma":[28.68928,76.9512],"Bahadurgarh City":[28.69078,76.93548],"Brigadier Hoshiyar Singh":[28.69746,76.9192],"Satguru Ram Singh Marg":[28.66205,77.1577],"Jama Masjid":[28.65001,77.23768],"Delhi Gate":[28.63922,77.24078],"ITO":[28.62819,77.24104],"Janpath":[28.62405,77.21926],"Khan Market":[28.60224,77.22913],"Jawaharlal Nehru Stadium":[28.58823,77.23378],"Jangpura":[28.58304,77.23932],"Lajpat Nagar":[28.56958,77.23851],"Moolchand":[28.5644,77.23426],"Kailash Colony":[28.55533,77.24196],"Nehru Place":[28.55142,77.25174],"Kalkaji Mandir":[28.54948,77.25909],"Govindpuri":[28.54455,77.26428],"Harkesh Nagar Okhla":[28.54293,77.27504],"Jasola Apollo":[28.53818,77.28327],"Sarita Vihar":[28.52864,77.28835],"Mohan Estate":[28.51958,77.2946],"Tughlakabad Station":[28.50244,77.29931],"Sarai":[28.47808,77.30483],"NHPC Chowk":[28.45769,77.3074],"Sector 28":[28.43821,77.30906],"Old Faridabad":[28.41083,77.31141],"Neelam Chowk Ajronda":[28.39766,77.31236],"Bata Chowk":[28.38595,77.31344],"Escorts Mujesar":[28.3701,77.31492],"Raja Nahar Singh":[28.34,77.31645],"Majlis Park":[28.7244,77.18184],"Shalimar Bagh":[28.70196,77.16543],"Shakurpur":[28.68577,77.14961],"ESI - Basaidarapur":[28.65807,77.12727],"Mayapuri":[28.63718,77.12973],"Naraina Vihar":[28.62439,77.13644],"Delhi Cantt.":[28.60862,77.14042],"Durgabai Deshmukh South Campus":[28.58937,77.16939],"Sir M. Vishweshwaraiah Moti Bagh":[28.57853,77.17574],"Bhikaji Cama Place":[28.57026,77.18787],"Sarojini Nagar":[28.57582,77.19808],"South Extension":[28.56857,77.22057],"Vinobapuri":[28.56587,77.2493],"Ashram":[28.57242,77.2586],"Sarai Kale Khan - Nizamuddin":[28.58875,77.25725],"Shree Ram Mandir Mayur Vihar":[28.60586,77.2987],"Trilokpuri - Sanjay Lake":[28.61345,77.30885],"East Vinod Nagar - Mayur Vihar II":[28.62004,77.30541],"Mandawali - West Vinod Nagar":[28.62498,77.30445],"IP Extension":[28.6319,77.31072],"Karkarduma Court":[28.6536,77.29579],"Krishna Nagar":[28.65781,77.29012],"East Azad Nagar":[28.66468,77.28484],"Jaffrabad":[28.68268,77.27481],"Maujpur - Babarpur":[28.69208,77.2797],"Yamuna Vihar":[28.70238,77.27731],"Bhajanpura":[28.7036,77.26265],"Khajuri Khas":[28.70526,77.2545],"Nanaksar - Sonia Vihar":[28.70872,77.24251],"Jagatpur - Wazirabad":[28.72112,77.224],"Jharoda Majra":[28.72496,77.21371],"Burari":[28.72983,77.19957],"Gokulpuri":[28.70248,77.28613],"Johri Enclave":[28.71288,77.29013],"Shiv Vihar":[28.72138,77.28946],"Okhla Bird Sanctuary":[28.55294,77.3216],"Kalindi Kunj":[28.54292,77.31011],"Jasola Vihar Shaheen Bagh":[28.54583,77.29666],"Okhla Vihar":[28.5613,77.29188],"Jamia Millia Islamia":[28.56305,77.28634],"Sukhdev Vihar":[28.55975,77.2749],"Okhla NSIC":[28.55449,77.26488],"Nehru Enclave":[28.54606,77.25151],"Greater Kailash":[28.54191,77.23849],"Chirag Delhi":[28.54111,77.23032],"Panchsheel Park":[28.54237,77.22109],"R. K. Puram":[28.55038,77.18552],"Munirka":[28.5569,77.17506],"Vasant Vihar":[28.55783,77.16112],"Shankar Vihar":[28.56085,77.14028],"Terminal 1-IGI Airport":[28.56483,77.12266],"Sadar Bazar Cantonment":[28.57711,77.11113],"Palam":[28.58891,77.08308],"Dashrathpuri":[28.60185,77.08238],"Dabri Mor - Janakpuri South":[28.61572,77.08519],"Krishna Park Extension":[28.64779,77.08434],"Deepali Chowk":[28.6981,77.11828],"Madhuban Chowk#magentan":[28.70327,77.13225],"Prashant Vihar":[28.7249,77.14247],"Bhalaswa":[28.73696,77.16809],"Nangli":[28.6173,77.01044],"Najafgarh":[28.61245,76.98651],"Dhansa Bus Stand":[28.61191,76.97853],"Shivaji Stadium":[28.6289,77.21132],"Dhaula Kuan":[28.59187,77.16172],"Delhi Aerocity":[28.54878,77.12079],"IGI Airport":[28.55646,77.0867],"Yashobhoomi Dwarka Sector-25":[28.55083,77.04531],"Sector 55-56":[28.42336,77.10513],"Sector 54 Chowk":[28.43298,77.1049],"Sector 53-54":[28.44638,77.10046],"Sector 42-43":[28.45743,77.09695],"DLF Phase 1":[28.47143,77.09396],"DLF Phase 2":[28.48756,77.09299],"Belvedere Towers":[28.4917,77.08813],"Cyber City":[28.49807,77.08926],"Moulsari Avenue":[28.50078,77.09463],"Noida Sector 51":[28.58572,77.37526],"Noida Sector 76":[28.56533,77.37966],"Noida Sector 101":[28.55605,77.38495],"Noida Sector 81":[28.5493,77.38995],"NSEZ":[28.5324,77.39475],"Noida Sector 83":[28.52227,77.39645],"Noida Sector 137":[28.51077,77.40361],"Noida Sector 142":[28.49905,77.41277],"Noida Sector 143":[28.49426,77.42238],"Noida Sector 144":[28.48629,77.43308],"Noida Sector 145":[28.479,77.44241],"Noida Sector 146":[28.46882,77.45521],"Noida Sector 147":[28.45935,77.46612],"Noida Sector 148":[28.44806,77.4766],"Knowledge Park II":[28.457,77.50025],"Pari Chowk":[28.46316,77.50814],"Alpha 1":[28.47103,77.51274],"Delta 1":[28.47848,77.52573],"GNIDA Office":[28.48468,77.5365],"Depot Station":[28.48901,77.54401],"Major Mohit Sharma Rajendra Nagar":[28.67761,77.35814],"Chawri Bazar":[28.64926,77.22652],"Golf Course":[28.56738,77.34632],"Maharaja Surajmal Stadium":[28.68188,77.074],"Lal Qila":[28.65748,77.23666],"Badarpur Border":[28.49326,77.30303],"Sant Surdas - Sihi":[28.35469,77.31625],"IIT":[28.54701,77.19455],"North Pitampura":[28.71307,77.13873],"DLF Phase 3":[28.49357,77.09366],"Guru Tegh Bahadur Nagar":[28.6989,77.20437],"Mewla Maharajpur":[28.44795,77.30823],"Badkal Mor":[28.42452,77.31024],"Barakhamba Road":[28.62916,77.22675],"Noida Sector 50":[28.57552,77.37746]};
-const hpl=document.getElementById('hpl');
-/* light tap: iOS 18 gives haptic feedback when a switch toggles; Android uses vibrate */
-const haptic=()=>{try{if(navigator.vibrate)navigator.vibrate(8);hpl.click()}catch(e){}};
-const calm=matchMedia('(prefers-reduced-motion: reduce)');
-const fade=fn=>{if(document.startViewTransition&&!calm.matches)document.startViewTransition(fn);else fn()};
+x:'<path d="m7 7 10 10M17 7 7 17"/>'};
 const ic=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IP[n]}</svg>`;
 for(const el of document.querySelectorAll('[data-ic]'))el.innerHTML=ic(el.dataset.ic);
 
@@ -487,84 +455,53 @@ const others=(s,l)=>uniqC(s.lines.filter(x=>x.c!==l.c).concat(s.links.flatMap(x=
 const xdots=ls=>ls.length?'<span class="xd" title="'+esc(ls.map(short).join(', '))+'">'+ls.map(x=>`<i style="--c:${x.c}"></i>`).join('')+'</span>':'';
 const norm=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const IDX=[...ST.values()].map(s=>({s,n:norm(s.name),a:norm(s.al)}));
-/* DMRC station codes (RCK, NDI ...) and everyday names people search for */
-const CODES=new Map();for(const ln of DMRC.trim().split('\n')){const [code,name]=ln.split('|');const st=BYN.get(toMine(name));if(code&&st)CODES.set(code.toLowerCase(),st)}
-const NICK={'cp':'Rajiv Chowk','connaught place':'Rajiv Chowk','ndls':'New Delhi','new delhi railway station':'New Delhi','isbt':'Kashmere Gate','old delhi':'Chandni Chowk','red fort':'Lal Qila','t3':'IGI Airport','terminal 3':'IGI Airport','t1':'Terminal 1-IGI Airport','delhi university':'Vishwavidyalaya','north campus':'Vishwavidyalaya','south campus':'Durgabai Deshmukh South Campus','gurgaon':'Millennium City Centre Gurugram','huda city centre':'Millennium City Centre Gurugram','nizamuddin':'Sarai Kale Khan - Nizamuddin','qutub minar':'Qutab Minar','iit delhi':'IIT','nsp':'Netaji Subhash Place','ina':'Dilli Haat - INA'};
-const NICKS=Object.entries(NICK).map(([k,v])=>[norm(k),[...ST.values()].find(s=>s.name===v),k]).filter(x=>x[1]);
-const nickLabel=k=>k.length<=4?k.toUpperCase():k.replace(/\b\w/g,c=>c.toUpperCase());
-function search(q){q=norm(q);if(!q)return[];const out=new Map();const add=(r,s,hint)=>{const o=out.get(s.k);if(!o||o.r>r)out.set(s.k,{r,s,hint})};
-  for(const it of IDX){const r=it.n.startsWith(q)?0:(' '+it.n).includes(' '+q)?1:it.n.includes(q)?2:it.a&&(' '+it.a).includes(' '+q)?3:-1;if(r>=0)add(r,it.s)}
-  if(q.length>=2){const c=CODES.get(q.replace(/ /g,''));if(c)for(const s of c)add(0,s,'Code '+q.toUpperCase());for(const [n,s,k] of NICKS)if(n===q||(q.length>=3&&n.startsWith(q)))add(n===q?0:1,s,nickLabel(k))}
-  return [...out.values()].sort((a,b)=>a.r-b.r||a.s.name.localeCompare(b.s.name)).slice(0,8)}
-const distKm=(a,b)=>{const r=Math.PI/180,dl=(b[0]-a[0])*r,dg=(b[1]-a[1])*r;return 12742*Math.asin(Math.sqrt(Math.sin(dl/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dg/2)**2))};
-const fmtD=km=>km<1?Math.round(km*1000/10)*10+' m':km.toFixed(1)+' km';
+function search(q){q=norm(q);if(!q)return[];const out=[];for(const it of IDX){const r=it.n.startsWith(q)?0:(' '+it.n).includes(' '+q)?1:it.n.includes(q)?2:it.a&&(' '+it.a).includes(' '+q)?3:-1;if(r>=0)out.push([r,it.s])}return out.sort((a,b)=>a[0]-b[0]||a[1].name.localeCompare(b[1].name)).slice(0,8).map(x=>x[1])}
 const subline=s=>[...new Set(s.lines.map(short))].join(', ')+(s.links.length?' · walk to '+s.links.map(x=>x.name).join(', '):'')+(s.al&&!s.name.includes(s.al)?' · '+s.al:'');
 const durA=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h} h${r?' '+r+' min':''}`:`${r} min`};
 const sel={from:null,to:null};
 const opt={few:false,sun:new Date().getDay()===0,card:!!LS.get('opt',{}).card};
-const expanded=new Set();let whenSet=false,lastKey='';
+const collapsed=new Set();
 
 /* if a field shows a station's exact name but nothing is selected (e.g. iOS autocorrect fired an input event), select it */
 function resolve(id){if(sel[id])return true;const v=norm($('#'+id).value);if(!v)return false;const m=IDX.filter(it=>it.n===v);if(m.length){sel[id]=m[0].s.k;return true}return false}
 function setupField(id){
   const inp=$('#'+id),ul=$('#m-'+id);let items=[],act=0;
-  /* items: {s,hint} stations, {loc:1} nearest station, {hd:'title'} headings */
-  const usable=i=>items[i]&&!items[i].hd;
-  const draw=()=>{ul.innerHTML=items.map((x,i)=>x.hd?`<li class="hd" role="presentation">${esc(x.hd)}</li>`:x.loc?`<li role="option" id="${id}-o${i}" class="${i===act?'act':''}" data-i="${i}"><span class="loc">${ic('loc')}</span><span>${esc(x.msg||'Nearest station')}<small>${esc(x.sub||'Uses your location, works offline')}</small></span></li>`:`<li role="option" id="${id}-o${i}" class="${i===act?'act':''}" data-i="${i}" aria-selected="${i===act}">${lineDots(x.s)}<span>${esc(x.s.name)}<small>${esc((x.hint?x.hint+' · ':'')+subline(x.s))}</small></span></li>`).join('');inp.setAttribute('aria-expanded',items.length?'true':'false');if(items.length)inp.setAttribute('aria-activedescendant',id+'-o'+act)};
-  const suggest=()=>{const seen=new Set(),rs=[];for(const p of recent){const k=p[id==='from'?0:1];if(!seen.has(k)&&k!==sel[id==='from'?'to':'from']){seen.add(k);rs.push({s:ST.get(k)})}}
-    items=[{loc:1},...(rs.length?[{hd:'Recent'},...rs.slice(0,5)]:[])];act=0;draw()};
-  const choose=k=>{haptic();sel[id]=k;inp.value=ST.get(k).name;items=[];draw();plan();if(id==='from'&&!sel.to)$('#to').focus();else inp.blur()};
-  const locate=x=>{if(!navigator.geolocation){x.msg='Location isn\'t available';x.sub='Type a station name instead';draw();return}
-    x.msg='Finding the nearest station…';x.sub='';draw();
-    navigator.geolocation.getCurrentPosition(pos=>{const me=[pos.coords.latitude,pos.coords.longitude];let best=null,bd=1e9;for(const [k,c] of Object.entries(CO)){if(!ST.has(k))continue;const d=distKm(me,c);if(d<bd){bd=d;best=k}}
-      if(!best||bd>40){x.msg='No metro station nearby';x.sub='You seem to be outside Delhi NCR';draw();return}
-      choose(best);showToast(`${ST.get(best).name} is ${fmtD(bd)} away`)},
-      err=>{x.msg=err.code===1?'Location is off for this app':'Couldn\'t find your location';x.sub=err.code===1?'Allow it in Settings › Privacy › Location Services':'Try again, or type a station name';draw()},
-      {enableHighAccuracy:true,timeout:15000,maximumAge:60000})};
-  const pick=x=>{if(!x||x.hd)return;if(x.loc){locate(x);return}choose(x.s.k)};
-  inp.addEventListener('input',()=>{if(sel[id]&&norm(inp.value)===norm(ST.get(sel[id]).name))return;sel[id]=null;if(!inp.value.trim()){suggest();return}items=search(inp.value);act=0;draw()});
-  inp.addEventListener('focus',()=>{inp.select();if(!inp.value.trim())suggest()});
-  inp.addEventListener('keydown',e=>{if(!items.length)return;const mv=d=>{let i=act;do{i=(i+d+items.length)%items.length}while(!usable(i));act=i;draw()};if(e.key==='ArrowDown'){mv(1);e.preventDefault()}else if(e.key==='ArrowUp'){mv(-1);e.preventDefault()}else if(e.key==='Enter'){pick(items[act]);e.preventDefault()}else if(e.key==='Escape'){items=[];draw()}});
-  inp.addEventListener('blur',()=>setTimeout(()=>{if(items.some(x=>x.loc&&x.msg&&x.msg.startsWith('Finding')))return;items=[];draw();if(!sel[id]&&resolve(id))plan();if(sel[id])inp.value=ST.get(sel[id]).name},150));
+  const draw=()=>{ul.innerHTML=items.map((s,i)=>`<li role="option" id="${id}-o${i}" class="${i===act?'act':''}" data-i="${i}" aria-selected="${i===act}">${lineDots(s)}<span>${esc(s.name)}<small>${esc(subline(s))}</small></span></li>`).join('');inp.setAttribute('aria-expanded',items.length?'true':'false');if(items.length)inp.setAttribute('aria-activedescendant',id+'-o'+act)};
+  const pick=s=>{sel[id]=s.k;inp.value=s.name;items=[];draw();plan();if(id==='from'&&!sel.to)$('#to').focus();else inp.blur()};
+  inp.addEventListener('input',()=>{if(sel[id]&&norm(inp.value)===norm(ST.get(sel[id]).name))return;sel[id]=null;items=search(inp.value);act=0;draw()});
+  inp.addEventListener('focus',()=>inp.select());
+  inp.addEventListener('keydown',e=>{if(!items.length)return;if(e.key==='ArrowDown'){act=(act+1)%items.length;draw();e.preventDefault()}else if(e.key==='ArrowUp'){act=(act-1+items.length)%items.length;draw();e.preventDefault()}else if(e.key==='Enter'){pick(items[act]);e.preventDefault()}else if(e.key==='Escape'){items=[];draw()}});
+  inp.addEventListener('blur',()=>setTimeout(()=>{items=[];draw();if(!sel[id]&&resolve(id))plan();if(sel[id])inp.value=ST.get(sel[id]).name},150));
   ul.addEventListener('mousedown',e=>e.preventDefault());
-  ul.addEventListener('click',e=>{const li=e.target.closest('li[data-i]');if(li)pick(items[+li.dataset.i])});
+  ul.addEventListener('click',e=>{const li=e.target.closest('li');if(li)pick(items[+li.dataset.i])});
 }
-let toastT=0;function showToast(m){let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');document.body.appendChild(t)}t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
 setupField('from');setupField('to');
-function setPair(f,t){sel.from=f;sel.to=t;$('#from').value=f?ST.get(f).name:'';$('#to').value=t?ST.get(t).name:'';expanded.clear();plan()}
+function setPair(f,t){sel.from=f;sel.to=t;$('#from').value=f?ST.get(f).name:'';$('#to').value=t?ST.get(t).name:'';collapsed.clear();plan()}
 const nowStr=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 $('#when').value=nowStr();
-const updWhen=()=>{$('#whenl').innerHTML=ic('clock')+(whenSet?'Leave at '+clock(hm($('#when').value)):'Leaving now');$('#whenp').classList.toggle('set',whenSet);$('#now').hidden=!whenSet};
-updWhen();
-const onWhen=()=>{if(!$('#when').value)return;whenSet=true;updWhen();plan()};
-$('#when').addEventListener('change',onWhen);$('#when').addEventListener('input',onWhen);
-$('#when').addEventListener('click',()=>{try{$('#when').showPicker()}catch(e){}});
-$('#now').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();haptic();whenSet=false;$('#when').value=nowStr();updWhen();plan()});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!whenSet&&sel.from&&sel.to&&location.hash!=='#saved')plan()});
-$('#swap').addEventListener('click',()=>{haptic();const f=sel.from,t=sel.to;fade(()=>{setPair(t,f)})});
+$('#when').addEventListener('change',plan);
+$('#now').addEventListener('click',e=>{e.preventDefault();$('#when').value=nowStr();plan()});
+$('#swap').addEventListener('click',()=>setPair(sel.to,sel.from));
 $('#f').addEventListener('submit',e=>e.preventDefault());
 const sync=()=>{for(const b of document.querySelectorAll('[data-mode]'))b.setAttribute('aria-pressed',(b.dataset.mode==='few')===opt.few);$('#sun').setAttribute('aria-pressed',opt.sun);$('#card').setAttribute('aria-pressed',opt.card)};
-for(const b of document.querySelectorAll('[data-mode]'))b.addEventListener('click',()=>{const few=b.dataset.mode==='few';if(few===opt.few)return;haptic();opt.few=few;fade(()=>{sync();expanded.clear();plan()})});
-$('#sun').addEventListener('click',()=>{haptic();opt.sun=!opt.sun;fade(()=>{sync();plan()})});
-$('#card').addEventListener('click',()=>{haptic();opt.card=!opt.card;LS.set('opt',{card:opt.card});fade(()=>{sync();plan()})});
+for(const b of document.querySelectorAll('[data-mode]'))b.addEventListener('click',()=>{opt.few=b.dataset.mode==='few';sync();plan()});
+$('#sun').addEventListener('click',()=>{opt.sun=!opt.sun;sync();plan()});
+$('#card').addEventListener('click',()=>{opt.card=!opt.card;LS.set('opt',{card:opt.card});sync();plan()});
 sync();
 
 let favs=LS.get('favs',[]),recent=LS.get('recent',[]);
 const valid=p=>Array.isArray(p)&&ST.has(p[0])&&ST.has(p[1]);favs=favs.filter(valid);recent=recent.filter(valid);
 const same=(a,b)=>a[0]===b[0]&&a[1]===b[1];
 const tripLink=(p,sub)=>`<button class="link trip" data-f="${esc(p[0])}" data-t="${esc(p[1])}"><span>${esc(ST.get(p[0]).name)} → ${esc(ST.get(p[1]).name)}${sub?`<small>${esc(sub)}</small>`:''}</span>${ic('chev')}</button>`;
-const swipeRow=(inner,kind,p)=>`<div class="sw" data-k="${kind}" data-f="${esc(p[0])}" data-t="${esc(p[1])}"><div class="del" aria-hidden="true">Remove</div><div class="swc">${inner}</div></div>`;
 function empty(title,msg,withSug){
   const picks=[...favs.map(p=>[p,'Saved']),...recent.filter(r=>!favs.some(f=>same(f,r))).map(p=>[p,'Recent'])].slice(0,4);
   const ex=[["Kashmere Gate","Pari Chowk"],["Rajiv Chowk","Noida Electronic City"],["New Delhi","IGI Airport"]].map(p=>[p,'']);
   const list=withSug?(picks.length?picks:ex):[];
-  $('#res').classList.remove('still');lastKey='';
-  $('#res').innerHTML=`<div class="empty${withSug?' start':''}"><p class="big">${esc(title)}</p><p>${esc(msg)}</p>${list.map(([p,sub])=>sub?swipeRow(tripLink(p,sub),sub==='Saved'?'f':'r',p):tripLink(p,sub)).join('')}</div>`;
+  $('#res').innerHTML=`<div class="empty"><p class="big">${esc(title)}</p><p>${esc(msg)}</p>${list.map(x=>tripLink(...x)).join('')}</div>`;
 }
 
 function plan(){
   resolve('from');resolve('to');
-  if(!whenSet)$('#when').value=nowStr();
   if(!sel.from||!sel.to){empty('Where to?','Choose two stations. You\'ll see every stop with its time, your platform, the exits, and the first and last train.',true);return}
   LS.set('last',[sel.from,sel.to]);
   if(sel.from===sel.to){empty('Same station','Pick a different destination.');return}
@@ -573,24 +510,18 @@ function plan(){
   if(!steps.some(s=>s.ty==='leg')){const lk=LINKS.find(x=>(x[0]===ST.get(sel.from).name&&x[1]===ST.get(sel.to).name)||(x[1]===ST.get(sel.from).name&&x[0]===ST.get(sel.to).name));empty('Walk '+(lk?lk[2]:'')+' min','These two stations are next to each other and connected on foot, so no train is needed.');return}
   const p=[sel.from,sel.to];recent=[p,...recent.filter(x=>!same(x,p))].slice(0,8);LS.set('recent',recent);
   const legs=steps.filter(s=>s.ty==='leg'),xs=steps.filter(s=>s.ty==='x');
-  const key=sel.from+'|'+sel.to;$('#res').classList.toggle('still',key===lastKey);lastKey=key;
   const total=steps.reduce((a,s)=>a+s.t,0),stops=legs.reduce((a,g)=>a+g.keys.length-1,0);
   const fr=fares(steps,opt.sun,opt.card),win=serviceWindow(steps,opt.sun),winW=serviceWindow(steps,false),isFav=favs.some(x=>same(x,p));
   let leave=hm($('#when').value||nowStr());if(leave>=1440)leave-=1440;
   const leaveEff=leave<win.fDep-180&&leave<240?leave+1440:leave,start=leaveEff<win.fDep?win.fDep:leaveEff;
   const m=Math.round(total),hh=Math.floor(m/60),mm=m%60;
   const rib=steps.map(s=>s.ty==='leg'?`<i style="--c:${s.line.c};flex:${s.t.toFixed(1)}"></i>`:`<i class="w" style="flex:${s.t.toFixed(1)}"></i>`).join('');
-  const lg=legs.map((g,i)=>`<button type="button" data-go="${i}" style="--c:${g.line.c}"><i></i>${esc(tiny(g.line))} ${durA(g.t)}</button>`).join('');
-  /* which train is the last one that still makes this trip work */
-  const lastBind=(()=>{const gs=[],gap=[];let pend=0;for(const x of steps){if(x.ty==='leg'){gs.push(x);gap.push(pend);pend=0}else pend+=x.t}
-    let L=Infinity,b=0,bd=0;for(let i=gs.length-1;i>=0;i--){const g=gs[i],d=depAt(g.line,g.i0,g.dir,'last',opt.sun),lim=L-g.t-(i<gs.length-1?gap[i+1]:0);if(d<=lim){L=d;b=i;bd=d}else L=lim}
-    return{g:gs[b],dep:bd,first:b===0}})();
+  const lg=legs.map(g=>`<span style="--c:${g.line.c}"><i></i>${esc(tiny(g.line))} ${durA(g.t)}</span>`).join('');
   const p0=platformFor(legs[0]);
-  let h=`<div class="top"><div><p class="od">${esc(ST.get(sel.from).name)} → ${esc(ST.get(sel.to).name)}</p><p class="big num">${hh?hh+'<small>h</small>':''}${mm}<small>min</small></p><div class="span num">Leave ${clock(start)} · Reach <b>${clock(start+total)}</b></div></div><button class="save" id="star" aria-pressed="${isFav}" aria-label="${isFav?'Remove from saved':'Save trip'}">${ic('bm')}</button></div>
+  let h=`<div class="top"><div><p class="od">${esc(ST.get(sel.from).name)} → ${esc(ST.get(sel.to).name)}</p><p class="big num">${hh?hh+'<small>h</small>':''}${mm}<small>min</small></p><div class="span num">${clock(start)} – ${clock(start+total)}</div></div><button class="save" id="star" aria-pressed="${isFav}" aria-label="${isFav?'Remove from saved':'Save trip'}">${ic('bm')}</button></div>
   <div class="ribbon">${rib}</div><div class="legs">${lg}</div>
   <div class="facts num"><div><span>Fare</span><b>${money(fr.total)}${fr.unk?'+':''}</b><small>${fr.gs.length>1?fr.gs.length+' tickets':opt.card?'smart card':opt.sun?'Sunday fare':'one ticket'}</small></div><div><span>Board</span><b>${p0?'Platform '+esc(p0):esc(tiny(legs[0].line))}</b><small>${xs.length?xs.length+(xs.length===1?' change':' changes'):'no changes'}</small></div><div><span>First train</span><b>${clock(win.fDep)}</b><small>arrive ${clock(win.fArr)}</small></div><div><span>Last train</span><b>${clock(win.lDep)}</b><small>arrive ${clock(win.lArr)}</small></div></div>`;
   if(leaveEff>win.lDep+0.5)h+=`<p class="note w">You'd miss the last connection. Leave by ${clock(win.lDep)} to finish this trip by metro tonight.</p>`;
-  else if(leaveEff>=win.fDep&&win.lDep-leaveEff<=45){const g=lastBind.g;h+=`<p class="note w">${lastBind.first?`This is close to the last train: it leaves ${esc(ST.get(g.keys[0]).name)} at ${clock(win.lDep)}.`:`Last connecting ${esc(short(g.line))} train leaves ${esc(ST.get(g.keys[0]).name)} at ${clock(lastBind.dep)}. Leave by ${clock(win.lDep)} to make it.`}</p>`}
   else if(leaveEff<win.fDep)h+=`<p class="note">Trains on this route start at ${clock(win.fDep)}${opt.sun?' on Sundays':''}, so the times below start then.</p>`;
   const notes=[];if(opt.sun&&win.fDep!==winW.fDep)notes.push(`Sunday: the first train is ${clock(win.fDep)} instead of ${clock(winW.fDep)}. Last trains are the same every day.`);if(win.est)notes.push('Some timings on this route are estimated.');
   if(notes.length)h+=`<p class="note">${esc(notes.join(' '))}</p>`;
@@ -598,44 +529,27 @@ function plan(){
   let t=start,li=0;
   for(let si=0;si<steps.length;si++){const s=steps[si];
     if(s.ty==='leg'){
-      const l=s.line,dir=towards(s),n=s.keys.length-1,col=n>1&&!expanded.has(li),pf=platformFor(s),lastLeg=!steps.slice(si+1).some(x=>x.ty==='leg'),nx=steps[si+1];
-      h+=`<div class="leg${col?' col':''}" style="--c:${l.c};--tx:${l.tx}" data-leg="${li}"><div class="lh"><i></i><span class="g"><b>${esc(short(l))}</b><span class="to">${pf?`<span class="pf">Platform ${esc(pf)}</span>`:''}<span>${dir.ring?'Ring, via '+esc(dir.via):'Towards '+esc(dir.term)}</span></span></span>${n>1?`<button class="disc num" aria-expanded="${!col}">${n} stops${ic('down')}</button>`:`<span class="disc num" style="cursor:default">1 stop</span>`}</div>`;
+      const l=s.line,dir=towards(s),n=s.keys.length-1,col=collapsed.has(li),pf=platformFor(s),lastLeg=!steps.slice(si+1).some(x=>x.ty==='leg'),nx=steps[si+1];
+      h+=`<div class="leg${col?' col':''}" style="--c:${l.c};--tx:${l.tx}" data-leg="${li}"><div class="lh"><i></i><span class="g"><b>${esc(short(l))}</b><span class="to">${pf?`<span class="pf">Platform ${esc(pf)}</span>`:''}<span>${dir.ring?'Ring, via '+esc(dir.via):'Towards '+esc(dir.term)}</span></span></span>${n>1?`<button class="disc" aria-expanded="${!col}">Ride ${n} stations${ic('down')}</button>`:'<span class="disc" style="cursor:default">Ride 1 station</span>'}</div>`;
       s.keys.forEach((k,i)=>{const st=ST.get(k),end=i===0||i===n;if(i)t+=s.hops[i-1];
-        h+=`<div class="r${i===0?' first':''}${i===n?' last':''}${end?' end':' mid'}"><time class="num">${clock(t)}</time><span class="rl">${i?`<b class="no">${i}</b>`:''}</span><span class="nm">${esc(st.name)}${end?xdots(others(st,l)):''}</span><span class="d num">${i===0?'Board':i===n&&n>1?`<span class="hop">+${Math.max(1,Math.round(s.hops[i-1]))} min</span><span class="tot">${durA(s.t)} ride</span>`:'+'+Math.max(1,Math.round(s.hops[i-1]))+' min'}</span></div>`});
+        h+=`<div class="r${i===0?' first':''}${i===n?' last':''}${end?' end':' mid'}"><time class="num">${clock(t)}</time><span class="rl">${i?`<b class="no">${i}</b>`:''}</span><span class="nm">${esc(st.name)}${end?xdots(others(st,l)):''}</span><span class="d num">${i===0?'Board':'+'+Math.max(1,Math.round(s.hops[i-1]))+' min'}</span></div>`});
       if(!lastLeg)h+=exitsHtml(s.keys[n],false,nx&&nx.ty==='x'&&(nx.walk||nx.sys)?'Exits to the walkway':'Exits here');
       h+='</div>';li++;
     }else{
-      const nl=steps.slice(si+1).find(x=>x.ty==='leg'),pl=steps.slice(0,si).reverse().find(x=>x.ty==='leg');
-      const at=pl?ST.get(pl.keys[pl.keys.length-1]).name:'';
-      let head,sub;
-      if(s.walk){head=`Walk to ${esc(ST.get(s.to).name)}`;sub=`${s.t} min walk${s.sys?' · buy a new ticket':''}`}
-      else{head=`Change at ${esc(at)}`;sub=`${s.t} min to the ${esc(short(nl?nl.line:s.line))}${s.sys?' · buy a new ticket':''}`}
-      if(nl){const npf=platformFor(nl),nd=towards(nl);sub+=`<br>${npf?`<span class="pf" style="--c:${nl.line.c};--tx:${nl.line.tx}">Platform ${esc(npf)}</span> `:''}${nd.ring?'Ring, via '+esc(nd.via):'Towards '+esc(nd.term)}`}
-      h+=`<div class="xf"><time class="num">${clock(t)}</time><span class="rl">${ic('walk')}</span><span><b>${head}</b><small>${sub}</small></span></div>`;
+      h+=`<div class="xf"><time class="num">${clock(t)}</time><span class="rl"></span><span>${s.walk?`Walk to ${esc(ST.get(s.to).name)}`:`Change to the ${esc(short(s.line))}`} · ${s.t} min${s.sys?' · new ticket':''}</span></div>`;
       t+=s.t;
     }
   }
-  {const dk=sel.to,dx=exitsHtml(dk,'plain'),inf=dx&&infoOf(dk);h+=`<h2>Exits at ${esc(ST.get(dk).name)}${dx?` <span>${inf.gates.length} gates</span>`:''}</h2>`+(dx?`<div class="dest">${!inf.aqua&&inf.gates.length>4?'<input class="gf" type="search" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Heading somewhere? Try mall, hospital, market" aria-label="Find the right gate">':''}${dx}<p class="gnote" id="gnone" hidden>No gate here lists that place. The full list is above when you clear the search.</p></div>`:`<p class="gnote">Exit details aren't available for this station.</p>`)}
+  {const dk=sel.to,dx=exitsHtml(dk,'plain');h+=`<h2>Exits at ${esc(ST.get(dk).name)}${dx?` <span>${infoOf(dk).gates.length} gates</span>`:''}</h2>`+(dx?`<div class="dest">${dx}</div>`:`<p class="gnote">Exit details aren't available for this station.</p>`)}
   h+=`<h2>Fare</h2><div class="rows">`+fr.gs.map(g=>`<div class="rw"><span>${esc(SYS[g.sys].n)}<small>${esc([...new Set(g.legs.map(x=>short(x.line)))].join(' + '))} \u00b7 ${esc(g.desc)}</small></span><span class="num">${g.f==null?'Not included':money(g.f)}</span></div>`).join('')+(fr.gs.length>1?`<div class="rw tot"><span>Total</span><span class="num">${money(fr.total)}${fr.unk?' + AE':''}</span></div>`:'')+'</div>';
   $('#res').innerHTML=h;
-  $('#star').addEventListener('click',()=>{haptic();const i=favs.findIndex(x=>same(x,p));if(i>=0)favs.splice(i,1);else favs.unshift(p);LS.set('favs',favs);const b=$('#star'),on=i<0;b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'Remove from saved':'Save trip')});
+  $('#star').addEventListener('click',()=>{const i=favs.findIndex(x=>same(x,p));if(i>=0)favs.splice(i,1);else favs.unshift(p);LS.set('favs',favs);const b=$('#star'),on=i<0;b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'Remove from saved':'Save trip')});
 }
-$('#res').addEventListener('click',e=>{const go=e.target.closest('[data-go]');if(go){const L=$(`.leg[data-leg="${go.dataset.go}"]`);if(L)L.scrollIntoView({behavior:calm.matches?'auto':'smooth',block:'start'});return}
-  const b=e.target.closest('button.disc');if(!b)return;haptic();const c=b.closest('.leg'),k=+c.dataset.leg;c.classList.toggle('col');if(c.classList.contains('col'))expanded.delete(k);else expanded.add(k);b.setAttribute('aria-expanded',!c.classList.contains('col'))});
-$('#res').addEventListener('input',e=>{if(!e.target.matches('.gf'))return;const q=norm(e.target.value),lis=[...e.target.parentNode.querySelectorAll('.gl li')];let n=0;for(const li of lis){const ok=!q||norm(li.textContent).includes(q);li.hidden=!ok;li.classList.toggle('hit',!!q&&ok);if(ok)n++}$('#gnone').hidden=n>0});
-/* swipe a trip to the left to remove it */
-{let sw=null,x0=0,y0=0,dx=0,horiz=null,eat=false;
-document.addEventListener('touchstart',e=>{sw=e.target.closest('.sw');if(!sw)return;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;horiz=null},{passive:true});
-document.addEventListener('touchmove',e=>{if(!sw)return;const mx=e.touches[0].clientX-x0,my=e.touches[0].clientY-y0;if(horiz===null&&(Math.abs(mx)>8||Math.abs(my)>8))horiz=Math.abs(mx)>Math.abs(my);if(!horiz)return;dx=Math.min(0,mx);sw.classList.add('drag');sw.firstElementChild.nextElementSibling.style.transform=`translateX(${dx}px)`},{passive:true});
-document.addEventListener('touchend',()=>{if(!sw)return;const el=sw,c=el.querySelector('.swc');el.classList.remove('drag');sw=null;if(!horiz)return;eat=true;setTimeout(()=>eat=false,350);
-  if(dx<-Math.min(110,el.offsetWidth*.35)){haptic();c.style.transform='translateX(-100%)';el.style.height=el.offsetHeight+'px';requestAnimationFrame(()=>{el.classList.add('gone');el.style.height='0px'});
-    setTimeout(()=>{const p=[el.dataset.f,el.dataset.t];if(el.dataset.k==='f'){favs=favs.filter(x=>!same(x,p));LS.set('favs',favs)}else{recent=recent.filter(x=>!same(x,p));LS.set('recent',recent)}if(location.hash==='#saved')renderSaved();else plan()},260)}
-  else c.style.transform=''});
-document.addEventListener('click',e=>{if(eat&&e.target.closest('.sw')){e.stopPropagation();e.preventDefault()}},true)}
+$('#res').addEventListener('click',e=>{const b=e.target.closest('.disc');if(!b)return;const c=b.closest('.leg'),k=+c.dataset.leg;c.classList.toggle('col');if(collapsed.has(k))collapsed.delete(k);else collapsed.add(k);b.setAttribute('aria-expanded',!c.classList.contains('col'))});
 document.addEventListener('click',e=>{const b=e.target.closest('.trip');if(!b)return;setPair(b.dataset.f,b.dataset.t);if(location.hash==='#saved')location.hash='plan';else if(innerWidth<1080)$('#res').scrollIntoView({behavior:'smooth',block:'start'})});
 
 function renderSaved(){
-  const item=(p,kind)=>swipeRow(`<div style="display:flex;align-items:center;border-top:.5px solid var(--hair)"><button class="link trip" style="border:0;flex:1" data-f="${esc(p[0])}" data-t="${esc(p[1])}"><span>${esc(ST.get(p[0]).name)} → ${esc(ST.get(p[1]).name)}<small>${esc([...new Set(ST.get(p[0]).lines.map(short))].join(', '))}</small></span></button><button class="rm" data-k="${kind}" data-f="${esc(p[0])}" data-t="${esc(p[1])}" aria-label="Remove">${ic('x')}</button></div>`,kind,p);
+  const item=(p,kind)=>`<div style="display:flex;align-items:center;border-top:.5px solid var(--hair)"><button class="link trip" style="border:0;flex:1" data-f="${esc(p[0])}" data-t="${esc(p[1])}"><span>${esc(ST.get(p[0]).name)} → ${esc(ST.get(p[1]).name)}<small>${esc([...new Set(ST.get(p[0]).lines.map(short))].join(', '))}</small></span></button><button class="rm" data-k="${kind}" data-f="${esc(p[0])}" data-t="${esc(p[1])}" aria-label="Remove">${ic('x')}</button></div>`;
   const sec=(title,arr,kind,emptyMsg)=>`<h2 style="margin-top:${kind==='f'?'0':'40px'}">${title}</h2>`+(arr.length?arr.map(p=>item(p,kind)).join('')+'<div style="border-top:.5px solid var(--hair)"></div>':`<p style="color:var(--l2);margin:8px 0 0">${emptyMsg}</p>`);
   $('#sv').innerHTML=sec('Saved trips',favs,'f','Tap the bookmark on a route to keep it here.')+sec('Recent',recent,'r','Trips you plan show up here.');
 }
@@ -657,7 +571,7 @@ function drawLine(){
   $('#lst').innerHTML=`<div class="lhd"><span>From start</span><span>First / last train</span></div>`+idx.map((i,j)=>{const s=ST.get(l.keys[i]),off=curDir?l.cumB[i]:l.cumF[i],last=j===n-1&&!l.ring,end=j===0||last;
     return `<div class="r${j===0?' first':''}${last?' last':''}${end?' end':''}" data-k="${esc(l.keys[i])}" tabindex="0" role="button" aria-label="Plan a trip from ${esc(s.name)}"><time class="num">${j?'+'+Math.round(off)+' min':''}</time><span class="rl"><b class="no">${j+1}</b></span><span class="nm">${esc(s.name)}${xdots(others(s,l))}${(()=>{const pf=last?null:platformFor({line:l,keys:[l.keys[i]],i0:i,dir:curDir});return pf?`<span class="pp">Platform ${esc(pf)}</span>`:''})()}</span><span class="ff num">${last?'':`${clock(depAt(l,i,curDir,'first',sun))}<br><b>${clock(depAt(l,i,curDir,'last',sun))}</b>`}</span></div>`}).join('');
 }
-const pickLineStation=el=>{haptic();const k=el.dataset.k;if(!sel.from||sel.to)setPair(k,null);else setPair(sel.from,k);location.hash='plan'};
+const pickLineStation=el=>{const k=el.dataset.k;if(!sel.from||sel.to)setPair(k,null);else setPair(sel.from,k);location.hash='plan'};
 $('#lst').addEventListener('click',e=>{const r=e.target.closest('.r');if(r)pickLineStation(r)});
 $('#lst').addEventListener('keydown',e=>{const r=e.target.closest('.r');if(r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();pickLineStation(r)}});
 
@@ -676,7 +590,7 @@ function view(){
   if('IntersectionObserver' in window&&t){io=new IntersectionObserver(([e])=>nb.classList.toggle('on',!e.isIntersecting),{rootMargin:'-44px 0px 0px 0px'});io.observe(t)}
 }
 addEventListener('hashchange',view);
-window.__test={route,platformFor,infoOf,ST,INFO,dn,setPair,plan,opt,sync,sel,search,CO};
+window.__test={route,platformFor,infoOf,ST,INFO,dn,setPair,plan,opt,sync,sel};
 const last=LS.get('last',null);
 if(valid(last||[]))setPair(last[0],last[1]);else plan();
 view();
