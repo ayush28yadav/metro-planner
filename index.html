@@ -164,7 +164,10 @@ h2 span{font-size:15px;font-weight:400;color:var(--l2);letter-spacing:-.2px}
 
 /* fare */
 .rows .rw{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:.5px solid var(--hair);font-size:15px}
-.rows .rw span:first-child{color:var(--l2)}
+.rows .rw span:first-child{color:var(--ink)}
+.rows .rw small{display:block;font-size:13px;color:var(--l2);margin-top:2px}
+.lh .lf{display:block;font-size:13px;color:var(--l2);margin-top:4px}
+.lh .lf b{display:inline;font-size:13px;color:var(--ink);font-weight:600}
 .rows .rw.tot{font-weight:600;font-size:17px;border-bottom:0}
 .rows .rw.tot span:first-child{color:var(--ink)}
 
@@ -240,8 +243,8 @@ details.about a{color:var(--blue)}
       <form id="f" autocomplete="off">
         <div class="fields">
           <span class="vl" aria-hidden="true"></span>
-          <div class="fld"><span class="mk o"></span><input id="from" placeholder="From" aria-label="From" role="combobox" aria-expanded="false" aria-controls="m-from"></div>
-          <div class="fld"><span class="mk d"></span><input id="to" placeholder="To" aria-label="To" role="combobox" aria-expanded="false" aria-controls="m-to"></div>
+          <div class="fld"><span class="mk o"></span><input id="from" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="From" aria-label="From" role="combobox" aria-expanded="false" aria-controls="m-from"></div>
+          <div class="fld"><span class="mk d"></span><input id="to" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" placeholder="To" aria-label="To" role="combobox" aria-expanded="false" aria-controls="m-to"></div>
           <button type="button" id="swap" aria-label="Swap from and to" data-ic="swap"></button>
           <ul class="menu" id="m-from" role="listbox"></ul><ul class="menu" id="m-to" role="listbox"></ul>
         </div>
@@ -376,10 +379,10 @@ function serviceWindow(steps,sun){
   return{fDep,fArr,lDep:L,lArr:a,est:legs.some(g=>g.line.est||(g.line.id==='aqua'&&g.dir===1))};
 }
 function towards(g){const l=g.line;if(l.ring)return{ring:1,via:ST.get(g.keys[1]).name};return{term:g.dir?l.st[0]:l.st[l.st.length-1]}}
-const money=x=>'₹'+(+x.toFixed(2));
+const money=x=>'₹'+(Number.isInteger(+x.toFixed(2))?+x.toFixed(2):x.toFixed(2));
 function fares(steps,sun,card){
   const gs=[];
-  for(const s of steps)if(s.ty==='leg'){const sys=s.line.sys,g=gs[gs.length-1];if(g&&g.sys===sys){g.km+=s.km;g.hops+=s.keys.length-1;g.last=s.keys[s.keys.length-1]}else gs.push({sys,km:s.km,hops:s.keys.length-1,first:s.keys[0],last:s.keys[s.keys.length-1]})}
+  for(const s of steps)if(s.ty==='leg'){const sys=s.line.sys,g=gs[gs.length-1];if(g&&g.sys===sys){g.km+=s.km;g.hops+=s.keys.length-1;g.last=s.keys[s.keys.length-1];g.legs.push(s)}else gs.push({sys,km:s.km,hops:s.keys.length-1,first:s.keys[0],last:s.keys[s.keys.length-1],legs:[s]});s.fg=gs[gs.length-1]}
   let total=0,unk=false;
   for(const g of gs){
     let f=null;
@@ -461,14 +464,16 @@ const sel={from:null,to:null};
 const opt={few:false,sun:new Date().getDay()===0,card:!!LS.get('opt',{}).card};
 const collapsed=new Set();
 
+/* if a field shows a station's exact name but nothing is selected (e.g. iOS autocorrect fired an input event), select it */
+function resolve(id){if(sel[id])return true;const v=norm($('#'+id).value);if(!v)return false;const m=IDX.filter(it=>it.n===v);if(m.length){sel[id]=m[0].s.k;return true}return false}
 function setupField(id){
   const inp=$('#'+id),ul=$('#m-'+id);let items=[],act=0;
   const draw=()=>{ul.innerHTML=items.map((s,i)=>`<li role="option" id="${id}-o${i}" class="${i===act?'act':''}" data-i="${i}" aria-selected="${i===act}">${lineDots(s)}<span>${esc(s.name)}<small>${esc(subline(s))}</small></span></li>`).join('');inp.setAttribute('aria-expanded',items.length?'true':'false');if(items.length)inp.setAttribute('aria-activedescendant',id+'-o'+act)};
   const pick=s=>{sel[id]=s.k;inp.value=s.name;items=[];draw();plan();if(id==='from'&&!sel.to)$('#to').focus();else inp.blur()};
-  inp.addEventListener('input',()=>{sel[id]=null;items=search(inp.value);act=0;draw()});
+  inp.addEventListener('input',()=>{if(sel[id]&&norm(inp.value)===norm(ST.get(sel[id]).name))return;sel[id]=null;items=search(inp.value);act=0;draw()});
   inp.addEventListener('focus',()=>inp.select());
   inp.addEventListener('keydown',e=>{if(!items.length)return;if(e.key==='ArrowDown'){act=(act+1)%items.length;draw();e.preventDefault()}else if(e.key==='ArrowUp'){act=(act-1+items.length)%items.length;draw();e.preventDefault()}else if(e.key==='Enter'){pick(items[act]);e.preventDefault()}else if(e.key==='Escape'){items=[];draw()}});
-  inp.addEventListener('blur',()=>setTimeout(()=>{items=[];draw();if(sel[id])inp.value=ST.get(sel[id]).name},150));
+  inp.addEventListener('blur',()=>setTimeout(()=>{items=[];draw();if(!sel[id]&&resolve(id))plan();if(sel[id])inp.value=ST.get(sel[id]).name},150));
   ul.addEventListener('mousedown',e=>e.preventDefault());
   ul.addEventListener('click',e=>{const li=e.target.closest('li');if(li)pick(items[+li.dataset.i])});
 }
@@ -498,11 +503,13 @@ function empty(title,msg,withSug){
 }
 
 function plan(){
+  resolve('from');resolve('to');
   if(!sel.from||!sel.to){empty('Where to?','Choose two stations. You\'ll see every stop with its time, your platform, the exits, and the first and last train.',true);return}
   LS.set('last',[sel.from,sel.to]);
   if(sel.from===sel.to){empty('Same station','Pick a different destination.');return}
   const steps=route(sel.from,sel.to,opt.few);
   if(!steps){empty('No route','These stations aren\'t connected yet.');return}
+  if(!steps.some(s=>s.ty==='leg')){const lk=LINKS.find(x=>(x[0]===ST.get(sel.from).name&&x[1]===ST.get(sel.to).name)||(x[1]===ST.get(sel.from).name&&x[0]===ST.get(sel.to).name));empty('Walk '+(lk?lk[2]:'')+' min','These two stations are next to each other and connected on foot, so no train is needed.');return}
   const p=[sel.from,sel.to];recent=[p,...recent.filter(x=>!same(x,p))].slice(0,8);LS.set('recent',recent);
   const legs=steps.filter(s=>s.ty==='leg'),xs=steps.filter(s=>s.ty==='x');
   const total=steps.reduce((a,s)=>a+s.t,0),stops=legs.reduce((a,g)=>a+g.keys.length-1,0);
@@ -511,7 +518,8 @@ function plan(){
   const leaveEff=leave<win.fDep-180&&leave<240?leave+1440:leave,start=leaveEff<win.fDep?win.fDep:leaveEff;
   const m=Math.round(total),hh=Math.floor(m/60),mm=m%60;
   const rib=steps.map(s=>s.ty==='leg'?`<i style="--c:${s.line.c};flex:${s.t.toFixed(1)}"></i>`:`<i class="w" style="flex:${s.t.toFixed(1)}"></i>`).join('');
-  const lg=legs.map(g=>`<span style="--c:${g.line.c}"><i></i>${esc(tiny(g.line))} ${durA(g.t)}</span>`).join('');
+  const legFare=g=>{const t=g.fg;if(!t)return'';if(t.legs[0]!==g)return 'same ticket';return t.f==null?'fare at station':money(t.f)};
+  const lg=legs.map(g=>`<span style="--c:${g.line.c}"><i></i>${esc(tiny(g.line))} ${durA(g.t)} \u00b7 ${legFare(g)}</span>`).join('');
   const p0=platformFor(legs[0]);
   let h=`<div class="top"><div><p class="od">${esc(ST.get(sel.from).name)} → ${esc(ST.get(sel.to).name)}</p><p class="big num">${hh?hh+'<small>h</small>':''}${mm}<small>min</small></p><div class="span num">${clock(start)} – ${clock(start+total)}</div></div><button class="save" id="star" aria-pressed="${isFav}" aria-label="${isFav?'Remove from saved':'Save trip'}">${ic('bm')}</button></div>
   <div class="ribbon">${rib}</div><div class="legs">${lg}</div>
@@ -525,7 +533,7 @@ function plan(){
   for(let si=0;si<steps.length;si++){const s=steps[si];
     if(s.ty==='leg'){
       const l=s.line,dir=towards(s),n=s.keys.length-1,col=collapsed.has(li),pf=platformFor(s),lastLeg=!steps.slice(si+1).some(x=>x.ty==='leg'),nx=steps[si+1];
-      h+=`<div class="leg${col?' col':''}" style="--c:${l.c};--tx:${l.tx}" data-leg="${li}"><div class="lh"><i></i><span class="g"><b>${esc(short(l))}</b><span class="to">${pf?`<span class="pf">Platform ${esc(pf)}</span>`:''}<span>${dir.ring?'Ring, via '+esc(dir.via):'Towards '+esc(dir.term)}</span></span></span>${n>1?`<button class="disc" aria-expanded="${!col}">Ride ${n} stations${ic('down')}</button>`:'<span class="disc" style="cursor:default">Ride 1 station</span>'}</div>`;
+      h+=`<div class="leg${col?' col':''}" style="--c:${l.c};--tx:${l.tx}" data-leg="${li}"><div class="lh"><i></i><span class="g"><b>${esc(short(l))}</b><span class="to">${pf?`<span class="pf">Platform ${esc(pf)}</span>`:''}<span>${dir.ring?'Ring, via '+esc(dir.via):'Towards '+esc(dir.term)}</span></span>${(()=>{const T=s.fg;if(!T)return'';const others=T.legs.filter(x=>x!==s).map(x=>short(x.line));const sysn=SYS[T.sys].n;if(T.legs[0]!==s)return `<span class="lf">Fare: same ${esc(sysn)} ticket as the ${esc(short(T.legs[0].line))}</span>`;if(T.f==null)return `<span class="lf">Fare: buy at the station (not included)</span>`;return `<span class="lf">Fare <b class="num">${money(T.f)}</b> \u00b7 ${esc(sysn)} ticket${others.length?', also covers the '+esc(others.join(' and ')):''}</span>`})()}</span>${n>1?`<button class="disc" aria-expanded="${!col}">Ride ${n} stations${ic('down')}</button>`:'<span class="disc" style="cursor:default">Ride 1 station</span>'}</div>`;
       s.keys.forEach((k,i)=>{const st=ST.get(k),end=i===0||i===n;if(i)t+=s.hops[i-1];
         h+=`<div class="r${i===0?' first':''}${i===n?' last':''}${end?' end':' mid'}"><time class="num">${clock(t)}</time><span class="rl">${i?`<b class="no">${i}</b>`:''}</span><span class="nm">${esc(st.name)}${end?xdots(others(st,l)):''}</span><span class="d num">${i===0?'Board':'+'+Math.max(1,Math.round(s.hops[i-1]))+' min'}</span></div>`});
       if(!lastLeg)h+=exitsHtml(s.keys[n],false,nx&&nx.ty==='x'&&(nx.walk||nx.sys)?'Exits to the walkway':'Exits here');
@@ -536,7 +544,7 @@ function plan(){
     }
   }
   {const dk=sel.to,dx=exitsHtml(dk,'plain');h+=`<h2>Exits at ${esc(ST.get(dk).name)}${dx?` <span>${infoOf(dk).gates.length} gates</span>`:''}</h2>`+(dx?`<div class="dest">${dx}</div>`:`<p class="gnote">Exit details aren't available for this station.</p>`)}
-  h+=`<h2>Fare</h2><div class="rows">`+fr.gs.map(g=>`<div class="rw"><span>${esc(SYS[g.sys].n)}, ${esc(g.desc)}</span><span class="num">${g.f==null?'Not included':money(g.f)}</span></div>`).join('')+(fr.gs.length>1?`<div class="rw tot"><span>Total</span><span class="num">${money(fr.total)}${fr.unk?' + AE':''}</span></div>`:'')+'</div>';
+  h+=`<h2>Fare</h2><div class="rows">`+fr.gs.map(g=>`<div class="rw"><span>${esc(SYS[g.sys].n)}<small>${esc([...new Set(g.legs.map(x=>short(x.line)))].join(' + '))} \u00b7 ${esc(g.desc)}</small></span><span class="num">${g.f==null?'Not included':money(g.f)}</span></div>`).join('')+(fr.gs.length>1?`<div class="rw tot"><span>Total</span><span class="num">${money(fr.total)}${fr.unk?' + AE':''}</span></div>`:'')+'</div>';
   $('#res').innerHTML=h;
   $('#star').addEventListener('click',()=>{const i=favs.findIndex(x=>same(x,p));if(i>=0)favs.splice(i,1);else favs.unshift(p);LS.set('favs',favs);const b=$('#star'),on=i<0;b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'Remove from saved':'Save trip')});
 }
@@ -585,7 +593,7 @@ function view(){
   if('IntersectionObserver' in window&&t){io=new IntersectionObserver(([e])=>nb.classList.toggle('on',!e.isIntersecting),{rootMargin:'-44px 0px 0px 0px'});io.observe(t)}
 }
 addEventListener('hashchange',view);
-window.__test={route,platformFor,infoOf,ST,INFO,dn};
+window.__test={route,platformFor,infoOf,ST,INFO,dn,setPair,plan,opt,sync,sel};
 const last=LS.get('last',null);
 if(valid(last||[]))setPair(last[0],last[1]);else plan();
 view();

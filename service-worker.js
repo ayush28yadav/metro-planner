@@ -9,7 +9,7 @@
 // also refreshed in the background for next time, but only if the response
 // is clearly a real, same-origin, non-redirected 200 (so a login wall or
 // any other unexpected page can never silently overwrite the good cache).
-const CACHE = 'metro-planner-2026-11-25e';
+const CACHE = 'metro-planner-2026-11-25f';
 const ASSETS = [
   './',
   './index.html',
