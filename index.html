@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Metro Planner">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<title>Metro Planner</title>
+<style>
+/* VOICE: quiet and exact, Apple-minimal; type and space do the work, decoration only where it carries meaning
+   IDEA: a printed timetable card: one line of controls, one big number, one ribbon of colour, then the stops
+   PICTURE: a proportional route ribbon in the lines' own colours, then the station-by-station list on thin rails
+   COLOUR and TYPE: white and near-black, soft grey fields, one blue accent; metro colours only on ribbon, rails and dots; San Francisco via the system stack
+   LAYOUT: single calm column on phones; planner left and journey right on wide screens; tab bar on phones, slim sidebar on Mac */
+:root{color-scheme:light dark;
+--bg:light-dark(#fff,#000);--soft:light-dark(#f5f5f7,#1c1c1e);--soft2:light-dark(#ebebef,#2c2c2e);
+--ink:light-dark(#1d1d1f,#f5f5f7);--l2:light-dark(#6e6e73,#a1a1a6);--l3:light-dark(#aeaeb2,#636366);
+--hair:light-dark(#e5e5ea,#2c2c2e);--blue:light-dark(#0071e3,#2997ff);--warn:light-dark(#c93400,#ff9f0a);
+--bar:light-dark(rgba(255,255,255,.8),rgba(0,0,0,.75));
+--sf:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Inter,"Segoe UI",Roboto,system-ui,sans-serif}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+html{overscroll-behavior-y:none}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.35 var(--sf);letter-spacing:-.2px;-webkit-font-smoothing:antialiased;overflow-x:clip;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+button,input{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+a{color:inherit;text-decoration:none;-webkit-touch-callout:none;touch-action:manipulation}
+.tabs a,.seg button,.pill{touch-action:manipulation}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:8px}
+.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+.num{font-variant-numeric:tabular-nums}
+
+/* navigation */
+.tabs{position:fixed;z-index:40;left:0;right:0;bottom:0;display:flex;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--hair);padding:7px 0 calc(5px + env(safe-area-inset-bottom))}
+.tabs a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--l3);font-size:10px;font-weight:500;min-height:44px}
+.tabs a .i{width:24px;height:24px}
+.tabs a[aria-current=page]{color:var(--ink)}
+.tabs .brand{display:none}
+.app{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+@media(min-width:900px){
+ .tabs{top:0;right:auto;width:210px;flex-direction:column;gap:2px;padding:28px 14px;background:var(--bg);border-top:0;border-right:.5px solid var(--hair);-webkit-backdrop-filter:none;backdrop-filter:none}
+ .tabs .brand{display:block;font-size:15px;font-weight:600;padding:0 10px 26px;color:var(--ink)}
+ .tabs a{flex:none;flex-direction:row;justify-content:flex-start;gap:10px;padding:0 10px;min-height:36px;border-radius:8px;font-size:15px;color:var(--l2)}
+ .tabs a .i{width:18px;height:18px}
+ .tabs a[aria-current=page]{background:var(--soft);color:var(--ink)}
+ .app{margin-left:210px;padding-bottom:56px}}
+
+.navbar{position:sticky;top:0;z-index:30;height:calc(44px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:.5px solid transparent;transition:background .25s,border-color .25s}
+.navbar.on{background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom-color:var(--hair)}
+.navbar .t{font-size:17px;font-weight:600;opacity:0;transition:opacity .25s;white-space:nowrap}
+.navbar.on .t{opacity:1}
+.back{justify-self:start;display:inline-flex;align-items:center;gap:1px;color:var(--blue);font-size:17px;padding:0 12px 0 8px;min-height:44px}
+.back .i{width:22px;height:22px;stroke-width:2.4}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+@media(min-width:700px){.wrap{padding:0 40px}}
+h1{margin:6px 0 22px;font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.6px}
+.lede{margin:-14px 0 24px;color:var(--l2);font-size:15px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:0 56px;align-items:start}
+#res{margin-top:40px}
+@media(min-width:1080px){.cols{grid-template-columns:minmax(0,340px) minmax(0,1fr)}.planner{position:sticky;top:64px}#res{margin-top:0}}
+
+/* planner */
+.fields{position:relative;background:var(--soft);border-radius:18px}
+.fld{display:flex;align-items:center;gap:14px;min-height:56px;padding:0 64px 0 18px;position:relative}
+.fld+.fld::before{content:"";position:absolute;top:0;left:46px;right:64px;border-top:.5px solid var(--hair)}
+.mk{width:14px;display:grid;place-items:center;flex:none}
+.mk.o::after{content:"";width:9px;height:9px;border-radius:50%;border:2px solid var(--ink)}
+.mk.d::after{content:"";width:9px;height:9px;border-radius:2px;background:var(--ink)}
+.vl{position:absolute;left:24.5px;top:34px;height:calc(100% - 68px);border-left:1.5px solid var(--l3)}
+.fld input{flex:1;border:0;background:none;outline:none;font-size:17px;padding:0;min-height:44px;color:var(--ink)}
+.fld input::placeholder{color:var(--l3)}
+#swap{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:0;background:var(--bg);color:var(--ink);display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+#swap .i{width:18px;height:18px}
+.menu{position:absolute;left:0;right:0;top:calc(100% + 8px);margin:0;padding:6px;list-style:none;background:var(--bg);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.16),0 0 0 .5px var(--hair);z-index:50;max-height:min(420px,60vh);overflow:auto;overscroll-behavior:contain}
+.menu:empty{display:none}
+.menu li{display:flex;align-items:center;gap:12px;padding:9px 12px;min-height:54px;border-radius:11px;cursor:pointer}
+.menu li.act{background:var(--soft)}
+.menu small{display:block;color:var(--l2);font-size:13px;margin-top:1px}
+.dots{display:flex;gap:3px;width:34px;flex:none;flex-wrap:wrap}.dots i{width:8px;height:8px;border-radius:50%}
+.ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.ctl>.time,.ctl>.seg{grid-column:1/-1}
+.ctl .pill{justify-content:center;height:40px;border-radius:20px}
+.ctl .seg{height:40px;border-radius:20px;grid-auto-columns:1fr}.ctl .seg button{border-radius:17px}
+.pill{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;border:0;background:var(--soft);font-size:15px;color:var(--ink);white-space:nowrap}
+.pill[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.pill.time{padding:0 4px 0 16px;justify-content:flex-start!important}
+.pill.time input{flex:1}
+.pill.time input{border:0;background:none;outline:none;font-size:16px;padding:0;min-width:86px;color:var(--ink)}
+.pill.time input::-webkit-calendar-picker-indicator{opacity:.35}
+.pill.time button{border:0;background:none;color:var(--blue);font-size:15px;padding:0 10px;height:36px}
+.seg{display:inline-grid;grid-auto-flow:column;background:var(--soft);border-radius:18px;padding:3px;height:36px}
+.seg button{border:0;background:none;border-radius:15px;padding:0 13px;font-size:15px;color:var(--l2);white-space:nowrap}
+.seg button[aria-pressed=true]{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* result */
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.od{font-size:15px;color:var(--l2);margin:0 0 6px}
+.big{font-size:clamp(44px,8vw,64px);line-height:1;font-weight:600;letter-spacing:-2px;margin:0;white-space:nowrap}
+.big small{font-size:.42em;font-weight:500;letter-spacing:-.3px;color:var(--l2);margin:0 10px 0 4px}
+.big small:last-child{margin-right:0}
+.span{margin-top:8px;font-size:17px;color:var(--ink)}
+.save{border:0;background:var(--soft);color:var(--ink);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;margin-top:2px}
+.save[aria-pressed=true] .i{fill:currentColor}
+.ribbon{display:flex;gap:3px;height:8px;margin:28px 0 10px}
+.ribbon i{border-radius:4px;background:var(--c)}
+.ribbon .w{background:none;border-top:2px dotted var(--l3);height:0;margin-top:3px;border-radius:0}
+.legs{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--l2)}
+.legs span{display:inline-flex;align-items:center;gap:6px}
+.legs i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:30px;border-top:.5px solid var(--hair);border-bottom:.5px solid var(--hair)}
+.facts div{padding:14px 0}
+.facts div+div{padding-left:16px;border-left:.5px solid var(--hair)}
+.facts span{display:block;font-size:12px;color:var(--l2);margin-bottom:3px}
+.facts b{display:block;font-size:20px;font-weight:600;letter-spacing:-.4px;white-space:nowrap}
+.facts small{display:block;font-size:12px;color:var(--l3);margin-top:2px;white-space:nowrap}
+@media(max-width:560px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}.facts div:nth-child(3){padding-left:0;border-left:0}.facts div:nth-child(n+3){border-top:.5px solid var(--hair)}}
+.note{margin:14px 0 0;font-size:14px;color:var(--l2);line-height:1.45}
+.note.w{color:var(--warn)}
+h2{margin:44px 0 6px;font-size:22px;font-weight:700;letter-spacing:-.4px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+h2 span{font-size:15px;font-weight:400;color:var(--l2);letter-spacing:-.2px}
+
+/* stops */
+.leg{margin-top:22px}
+.lh{display:flex;align-items:center;gap:10px;padding:0 0 10px;border-bottom:.5px solid var(--hair);margin-bottom:6px}
+.lh i{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.lh b{font-weight:600;font-size:17px}
+.lh .g{flex:1}.lh .g b{display:block}.lh .to{display:block;color:var(--l2);font-size:14px;margin-top:1px}
+.lh i{align-self:flex-start;margin-top:7px}
+.disc{border:0;background:none;color:var(--l2);font-size:14px;padding:6px 0 6px 10px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.disc .i{width:13px;height:13px;stroke-width:2.4;transition:transform .25s}
+.leg.col .disc .i{transform:rotate(-90deg)}
+.leg.col .r.mid{display:none}
+.r{display:grid;grid-template-columns:84px 28px minmax(0,1fr) auto;align-items:center;min-height:38px}
+.r time{text-align:right;padding-right:12px;font-size:13px;color:var(--l3);white-space:nowrap;overflow:hidden}
+.r .rl{align-self:stretch;position:relative}
+.r .rl::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--c)}
+.r.first .rl::before{top:50%}.r.last .rl::before{bottom:50%}
+.leg.col .r.first .rl::before{bottom:0}
+.r.end{min-height:44px}
+.r.end .rl::after{content:"";position:absolute;left:50%;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:var(--bg);border:2.5px solid var(--c)}
+.r .nm{padding-left:14px;font-size:15px;color:var(--l2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.r.end .nm{color:var(--ink);font-size:17px;font-weight:600}
+.r.end time{color:var(--ink);font-size:14px;font-weight:600}
+.r .d{font-size:13px;color:var(--l3);padding-left:10px;white-space:nowrap}
+.r .no{position:absolute;z-index:1;left:50%;top:50%;transform:translate(-50%,-50%);min-width:19px;height:19px;padding:0 4px;border-radius:10px;background:var(--bg);border:1.5px solid var(--c);color:var(--l2);font-size:10.5px;font-weight:600;line-height:16px;text-align:center;letter-spacing:0}
+.r.end .no{min-width:23px;height:23px;border-radius:12px;line-height:18px;font-size:11.5px;border-width:2.5px;color:var(--ink)}
+.r.last .no{background:var(--c);color:var(--tx);border-color:var(--c)}
+.r.end:has(.no) .rl::after{display:none}
+.xd{display:inline-flex;gap:3px}.xd i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.xf{display:grid;grid-template-columns:84px 28px minmax(0,1fr);align-items:center;min-height:52px;color:var(--l2);font-size:14px}
+.xf time{text-align:right;padding-right:12px;font-size:13px;color:var(--l3);white-space:nowrap}
+.xf .rl{align-self:stretch;position:relative}
+.xf .rl::before{content:"";position:absolute;left:50%;top:4px;bottom:4px;border-left:2px dotted var(--l3);margin-left:-1px}
+.xf span:last-child{padding-left:14px}
+
+/* fare */
+.rows .rw{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:.5px solid var(--hair);font-size:15px}
+.rows .rw span:first-child{color:var(--l2)}
+.rows .rw.tot{font-weight:600;font-size:17px;border-bottom:0}
+.rows .rw.tot span:first-child{color:var(--ink)}
+
+/* empty */
+.empty .big{font-size:clamp(34px,6vw,48px);letter-spacing:-1.2px;font-weight:600;line-height:1.08;white-space:normal;text-wrap:balance}
+.empty p{color:var(--l2);margin:12px 0 30px;max-width:40ch}
+.link{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;background:none;border-top:.5px solid var(--hair);padding:15px 0;text-align:left;font-size:17px;color:var(--ink)}
+.link:last-child{border-bottom:.5px solid var(--hair)}
+.link small{color:var(--l2);font-size:13px;display:block;margin-top:2px}
+.link .i{width:15px;height:15px;color:var(--l3);stroke-width:2.2}
+.link:hover{color:var(--blue)}
+
+/* lines */
+.lr{display:flex;align-items:center;gap:14px;padding:15px 0;border-top:.5px solid var(--hair)}
+.lr:last-child{border-bottom:.5px solid var(--hair)}
+.lr i{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.lr .g{flex:1}
+.lr small{display:block;color:var(--l2);font-size:13px;margin-top:2px}
+.lr .n{color:var(--l3);font-size:15px}
+.lr .i{width:15px;height:15px;color:var(--l3);stroke-width:2.2}
+.lr:hover b{color:var(--blue)}
+.lr b{font-weight:500}
+.ldet .r{cursor:pointer;min-height:50px;border-radius:10px}
+.ldet .r:hover .nm{color:var(--blue)}
+.ldet .r .nm{color:var(--ink);font-size:16px}
+.ff{font-size:13px;color:var(--l2);text-align:right;line-height:1.35;white-space:nowrap;padding-left:10px}
+.ff b{color:var(--ink);font-weight:500}
+#ldir{display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:520px;height:auto;min-height:42px;border-radius:21px;margin-bottom:22px}
+#ldir button{white-space:normal;line-height:1.2;padding:7px 10px;border-radius:18px;font-size:14px}
+.lhd{display:flex;justify-content:space-between;font-size:12px;color:var(--l3);padding:0 0 8px;border-bottom:.5px solid var(--hair);margin-bottom:8px}
+.rm{border:0;background:none;color:var(--l3);width:40px;height:40px;display:grid;place-items:center;flex:none}
+.pf{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:10px;background:var(--c);color:var(--tx);font-size:12px;font-weight:700;letter-spacing:0;white-space:nowrap}
+.lh .to{display:flex!important;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.ex{margin:6px 0 2px 112px;border-top:.5px solid var(--hair);border-bottom:.5px solid var(--hair)}
+.ex summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;font-size:14px;font-weight:600;min-height:44px}
+.ex summary::-webkit-details-marker{display:none}
+.ex summary span{color:var(--l2);font-weight:400;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.ex summary .i{width:13px;height:13px;stroke-width:2.4;transition:transform .25s}
+.ex[open] summary .i{transform:rotate(180deg)}
+.gl{list-style:none;margin:0;padding:0 0 6px}
+.gl li{display:flex;gap:12px;align-items:baseline;padding:8px 0;font-size:15px;line-height:1.35;border-top:.5px solid var(--hair)}
+.gl li:first-child{border-top:0}
+.gl li b{flex:none;min-width:26px;height:22px;padding:0 7px;border-radius:11px;background:var(--soft);font-size:12.5px;font-weight:600;display:inline-grid;place-items:center;letter-spacing:0}
+.gl li.cl{color:var(--l3)}
+.gnote{font-size:13px;color:var(--l2);margin:6px 0 0}
+.dest{margin-top:10px}
+.ldet .r .pp{display:block;width:100%;font-size:12px;color:var(--l3);font-weight:400}
+@media(max-width:520px){.ex{margin-left:0}}
+details.about{margin-top:56px;color:var(--l2);font-size:13px;line-height:1.55;max-width:680px}
+details.about summary{cursor:pointer;list-style:none;color:var(--l2);font-size:13px;min-height:32px;display:flex;align-items:center}
+details.about summary::-webkit-details-marker{display:none}
+details.about a{color:var(--blue)}
+@media(max-width:520px){.r{grid-template-columns:76px 26px minmax(0,1fr) auto}.xf{grid-template-columns:76px 26px minmax(0,1fr)}.r time,.xf time{padding-right:10px}.r .nm{padding-left:12px;font-size:14.5px}.r.end .nm{font-size:16px}.r.end time{font-size:14px}.r .d{font-size:12px;padding-left:6px}}
+@media(max-width:360px){.r{grid-template-columns:70px 24px minmax(0,1fr) auto}.xf{grid-template-columns:70px 24px minmax(0,1fr)}}
+@media(prefers-reduced-motion:no-preference){#res>*{animation:fi .4s ease both}.ribbon i{animation:gr .6s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}@keyframes fi{from{opacity:0}}@keyframes gr{from{transform:scaleX(0)}}}
+</style>
+</head>
+<body>
+<nav class="tabs" aria-label="Sections">
+  <span class="brand">Metro Planner</span>
+  <a href="#plan" id="n-plan"><span data-ic="route"></span>Plan</a>
+  <a href="#lines" id="n-lines"><span data-ic="list"></span>Lines</a>
+  <a href="#saved" id="n-saved"><span data-ic="bm"></span>Saved</a>
+</nav>
+<div class="app">
+<header class="navbar" id="nb"><span id="backslot"></span><span class="t" id="nbt">Metro Planner</span><span></span></header>
+<main class="wrap">
+
+<section id="v-plan">
+  <h1 data-title>Metro Planner</h1>
+  <div class="cols">
+    <div class="planner">
+      <form id="f" autocomplete="off">
+        <div class="fields">
+          <span class="vl" aria-hidden="true"></span>
+          <div class="fld"><span class="mk o"></span><input id="from" placeholder="From" aria-label="From" role="combobox" aria-expanded="false" aria-controls="m-from"></div>
+          <div class="fld"><span class="mk d"></span><input id="to" placeholder="To" aria-label="To" role="combobox" aria-expanded="false" aria-controls="m-to"></div>
+          <button type="button" id="swap" aria-label="Swap from and to" data-ic="swap"></button>
+          <ul class="menu" id="m-from" role="listbox"></ul><ul class="menu" id="m-to" role="listbox"></ul>
+        </div>
+        <div class="ctl">
+          <label class="pill time"><span style="color:var(--l2)">Leave</span><input id="when" type="time" aria-label="Leave at"><button type="button" id="now">Now</button></label>
+          <div class="seg" role="group" aria-label="Route preference"><button type="button" data-mode="fast" aria-pressed="true">Fastest</button><button type="button" data-mode="few" aria-pressed="false">Fewer changes</button></div>
+          <button type="button" class="pill" id="sun" aria-pressed="false">Sunday</button>
+          <button type="button" class="pill" id="card" aria-pressed="false">Smart card</button>
+        </div>
+      </form>
+    </div>
+    <div id="res" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="v-lines" hidden>
+  <h1 data-title>Lines</h1>
+  <div id="llist"></div>
+</section>
+
+<section id="v-line" hidden>
+  <h1 data-title id="ldt"></h1>
+  <p class="lede" id="lds"></p>
+  <div class="seg" id="ldir" role="group" aria-label="Direction"></div>
+  <div class="ldet" id="lst"></div>
+</section>
+
+<section id="v-saved" hidden>
+  <h1 data-title>Saved</h1>
+  <div id="sv"></div>
+</section>
+
+<details class="about"><summary>About this data</summary>
+<p>Platforms and exit gates come from each station's page on delhimetrorail.com (read in November 2026). Aqua Line platforms follow NMRC's layout: Platform 1 towards Sector 51, Platform 2 towards Depot. NMRC doesn't publish where each Aqua Line gate leads, so Aqua Line stations show the nearest landmark NMRC lists. Travel times are fitted to station-to-station times from delhimetrorail.info, separately for each direction (the Aqua Line uses NMRC's own station timetable); a few of the newest stations use their line's average time per stop. Changing lines adds 4 to 8 minutes. First and last trains come from terminal timings: DMRC's last trains (mostly 11:00 pm, the same every day), first trains around 6:00 am (7:00 am on Sundays on the Pink, Magenta and Grey lines), the Aqua Line from 6:00 am (8:00 am on Sundays) to 11:25 pm from Sector 51 and 10:10 pm from Depot, and Rapid Metro from 6:05 am to 10:00 pm. Fares use DMRC's slabs from 25 August 2025, and Airport Express fares aren't included. Official sources: delhimetrorail.com (<a href="https://www.delhimetrorail.com">link</a>) and nmrcnoida.com (<a href="https://www.nmrcnoida.com">link</a>).</p></details>
+</main>
+</div>
+<script>
+{
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem('dm_'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('dm_'+k,JSON.stringify(v))}catch(e){}}};
+
+const SYS={d:{n:'Delhi Metro',v:36},a:{n:'Airport Express',v:60},r:{n:'Rapid Metro Gurugram',v:30},q:{n:'Noida Metro (Aqua Line)',v:45}};
+/* f: first departure [from st[0], from last st]; l: last departure [from st[0], from last st]; est: times assumed */
+const LINES=[
+{id:'red',n:'Red Line',c:'#E2231A',tx:'#fff',sys:'d',f:['06:00','06:00'],l:['23:00','23:00'],gap:34.55/28,st:["Shaheed Sthal (New Bus Adda)","Hindon River","Arthala","Mohan Nagar","Shyam Park","Major Mohit Sharma Rajendra Nagar","Raj Bagh","Shaheed Nagar","Dilshad Garden","Jhilmil","Mansarovar Park","Shahdara","Welcome","Seelampur","Shastri Park","Kashmere Gate","Tis Hazari","Pulbangash","Pratap Nagar","Shastri Nagar","Inderlok","Kanhaiya Nagar","Keshav Puram","Netaji Subhash Place","Kohat Enclave","Madhuban Chowk","Rohini","Dr. Baba Saheb Ambedkar Hospital","Rithala"]},
+{id:'yellow',n:'Yellow Line',c:'#FFCB05',tx:'#111',sys:'d',f:['06:00','06:00'],l:['23:00','23:00'],gap:49.02/36,st:["Samaypur Badli","Rohini Sector 18, 19","Haiderpur Badli Mor","Jahangirpuri","Adarsh Nagar","Azadpur","Model Town","Guru Tegh Bahadur Nagar","Vishwavidyalaya","Vidhan Sabha","Civil Lines","Kashmere Gate","Chandni Chowk","Chawri Bazar","New Delhi","Rajiv Chowk","Patel Chowk","Central Secretariat","Seva Teerth","Lok Kalyan Marg","Jor Bagh","Dilli Haat - INA","AIIMS","Green Park","Hauz Khas","Malviya Nagar","Saket","Qutab Minar","Chhatarpur","Sultanpur","Ghitorni","Arjan Garh","Guru Dronacharya","Sikanderpur","MG Road","IFFCO Chowk","Millennium City Centre Gurugram"]},
+{id:'blue',n:'Blue Line',c:'#0B6BB5',tx:'#fff',sys:'d',grp:'blue',f:['06:00','06:00'],l:['22:50','23:00'],gap:56.11/49,st:["Dwarka Sector 21","Dwarka Sector 8","Dwarka Sector 9","Dwarka Sector 10","Dwarka Sector 11","Dwarka Sector 12","Dwarka Sector 13","Dwarka Sector 14","Dwarka-Kakrola","Dwarka Mor","Nawada","Uttam Nagar West","Uttam Nagar East","Janakpuri West","Janakpuri East","Tilak Nagar","Subhash Nagar","Tagore Garden","Rajouri Garden","Ramesh Nagar","Moti Nagar","Kirti Nagar","Shadipur","Patel Nagar","Rajendra Place","Karol Bagh","Jhandewalan","Ramakrishna Ashram Marg","Rajiv Chowk","Barakhamba Road","Mandi House","Supreme Court","Indraprastha","Yamuna Bank","Akshardham","Mayur Vihar-I","Mayur Vihar Extension","New Ashok Nagar","Noida Sector 15","Noida Sector 16","Noida Sector 18","Botanical Garden","Golf Course","Noida City Centre","Noida Sector 34","Noida Sector 52","Noida Sector 61","Noida Sector 59","Noida Sector 62","Noida Electronic City"]},
+{id:'bluebr',n:'Blue Line (Vaishali branch)',c:'#0B6BB5',tx:'#fff',sys:'d',grp:'blue',f:['06:00','06:00'],l:['23:00','23:00'],gap:8.51/7,st:["Yamuna Bank","Laxmi Nagar","Nirman Vihar","Preet Vihar","Karkarduma","Anand Vihar","Kaushambi","Vaishali"]},
+{id:'green',n:'Green Line',c:'#2E9F4A',tx:'#fff',sys:'d',grp:'green',f:['06:00','06:00'],l:['23:00','22:45'],gaps:[...Array(14).fill(15.1/14),...Array(7).fill(11.18/7)],st:["Inderlok","Ashok Park Main","Punjabi Bagh","Punjabi Bagh West","Shivaji Park","Madipur","Paschim Vihar East","Paschim Vihar West","Peeragarhi","Udyog Nagar","Maharaja Surajmal Stadium","Nangloi","Nangloi Railway Station","Rajdhani Park","Mundka","Mundka Industrial Area","Ghevra","Tikri Kalan","Tikri Border","Pandit Shree Ram Sharma","Bahadurgarh City","Brigadier Hoshiyar Singh"]},
+{id:'greenbr',n:'Green Line (Kirti Nagar branch)',c:'#2E9F4A',tx:'#fff',sys:'d',grp:'green',f:['06:00','06:00'],l:['23:00','23:00'],est:1,gap:1.75,st:["Ashok Park Main","Satguru Ram Singh Marg","Kirti Nagar"]},
+{id:'violet',n:'Violet Line',c:'#6E2C91',tx:'#fff',sys:'d',f:['06:00','06:00'],l:['23:00','23:00'],gap:46.34/33,st:["Kashmere Gate","Lal Qila","Jama Masjid","Delhi Gate","ITO","Mandi House","Janpath","Central Secretariat","Khan Market","Jawaharlal Nehru Stadium","Jangpura","Lajpat Nagar","Moolchand","Kailash Colony","Nehru Place","Kalkaji Mandir","Govindpuri","Harkesh Nagar Okhla","Jasola Apollo","Sarita Vihar","Mohan Estate","Tughlakabad Station","Badarpur Border","Sarai","NHPC Chowk","Mewla Maharajpur","Sector 28","Badkal Mor","Old Faridabad","Neelam Chowk Ajronda","Bata Chowk","Escorts Mujesar","Sant Surdas - Sihi","Raja Nahar Singh"]},
+{id:'pink',n:'Pink Line',c:'#EC6AA0',tx:'#111',sys:'d',grp:'pink',ring:true,f:['06:00','06:00'],sunF:'07:00',l:['22:40','22:40'],gap:1.6,st:["Majlis Park","Azadpur","Shalimar Bagh","Netaji Subhash Place","Shakurpur","Punjabi Bagh West","ESI - Basaidarapur","Rajouri Garden","Mayapuri","Naraina Vihar","Delhi Cantt.","Durgabai Deshmukh South Campus","Sir M. Vishweshwaraiah Moti Bagh","Bhikaji Cama Place","Sarojini Nagar","Dilli Haat - INA","South Extension","Lajpat Nagar","Vinobapuri","Ashram","Sarai Kale Khan - Nizamuddin","Mayur Vihar-I","Shree Ram Mandir Mayur Vihar","Trilokpuri - Sanjay Lake","East Vinod Nagar - Mayur Vihar II","Mandawali - West Vinod Nagar","IP Extension","Anand Vihar","Karkarduma","Karkarduma Court","Krishna Nagar","East Azad Nagar","Welcome","Jaffrabad","Maujpur - Babarpur","Yamuna Vihar","Bhajanpura","Khajuri Khas","Nanaksar - Sonia Vihar","Jagatpur - Wazirabad","Jharoda Majra","Burari"]},
+{id:'pinks',n:'Pink Line (Shiv Vihar branch)',c:'#EC6AA0',tx:'#111',sys:'d',grp:'pink',f:['06:00','06:00'],sunF:'07:00',l:['00:20','22:50'],gap:1.4,st:["Maujpur - Babarpur","Gokulpuri","Johri Enclave","Shiv Vihar"]},
+{id:'magenta',n:'Magenta Line',c:'#C2187F',tx:'#fff',sys:'d',f:['06:00','06:00'],sunF:'07:00',l:['23:00','22:50'],gap:1.6,st:["Botanical Garden","Okhla Bird Sanctuary","Kalindi Kunj","Jasola Vihar Shaheen Bagh","Okhla Vihar","Jamia Millia Islamia","Sukhdev Vihar","Okhla NSIC","Kalkaji Mandir","Nehru Enclave","Greater Kailash","Chirag Delhi","Panchsheel Park","Hauz Khas","IIT","R. K. Puram","Munirka","Vasant Vihar","Shankar Vihar","Terminal 1-IGI Airport","Sadar Bazar Cantonment","Palam","Dashrathpuri","Dabri Mor - Janakpuri South","Janakpuri West","Krishna Park Extension"]},
+{id:'magentan',n:'Magenta Line (north section)',c:'#C2187F',tx:'#fff',sys:'d',f:['07:00','07:00'],sunF:'07:00',l:['22:00','22:00'],est:1,gap:1.5,st:["Deepali Chowk","Madhuban Chowk","North Pitampura","Prashant Vihar","Haiderpur Badli Mor","Bhalaswa","Majlis Park"]},
+{id:'grey',n:'Grey Line',c:'#8C9196',tx:'#111',sys:'d',f:['06:00','06:00'],sunF:'07:00',l:['23:00','23:00'],gap:5.19/3,st:["Dwarka-Kakrola","Nangli","Najafgarh","Dhansa Bus Stand"]},
+{id:'ae',n:'Airport Express',c:'#F47B20',tx:'#111',sys:'a',f:['04:45','04:45'],l:['23:40','23:15'],gap:22.7/6,st:["New Delhi","Shivaji Stadium","Dhaula Kuan","Delhi Aerocity","IGI Airport","Dwarka Sector 21","Yashobhoomi Dwarka Sector-25"]},
+{id:'rapid',n:'Rapid Metro',c:'#2C7BBE',tx:'#fff',sys:'r',f:['06:05','06:05'],l:['22:00','22:00'],gap:1.17,st:["Sector 55-56","Sector 54 Chowk","Sector 53-54","Sector 42-43","DLF Phase 1","Sikanderpur","DLF Phase 2","Belvedere Towers","Cyber City","Moulsari Avenue","DLF Phase 3"]},
+{id:'aqua',n:'Aqua Line',c:'#00A9C6',tx:'#111',sys:'q',f:['06:00','06:00'],sunF:'08:00',l:['23:25','22:10'],gap:29.7/20,st:["Noida Sector 51","Noida Sector 50","Noida Sector 76","Noida Sector 101","Noida Sector 81","NSEZ","Noida Sector 83","Noida Sector 137","Noida Sector 142","Noida Sector 143","Noida Sector 144","Noida Sector 145","Noida Sector 146","Noida Sector 147","Noida Sector 148","Knowledge Park II","Pari Chowk","Alpha 1","Delta 1","GNIDA Office","Depot Station"]}
+];
+const ALIAS={"Seva Teerth":"Udyog Bhawan","Madhuban Chowk":"Pitampura","Dwarka-Kakrola":"Dwarka","Shaheed Sthal (New Bus Adda)":"Ghaziabad","IGI Airport":"Terminal 3 T3 airport","Terminal 1-IGI Airport":"T1 airport","Sikanderpur":"Gurgaon","Millennium City Centre Gurugram":"HUDA City Centre Gurgaon","Rohini":"Rohini East","Dr. Baba Saheb Ambedkar Hospital":"Rohini West","Durgabai Deshmukh South Campus":"Dhaula Kuan","Dilli Haat - INA":"INA","Sarai Kale Khan - Nizamuddin":"Hazrat Nizamuddin","Raja Nahar Singh":"Ballabhgarh","Brigadier Hoshiyar Singh":"Bahadurgarh","Pari Chowk":"Greater Noida","North Pitampura":"Uttari Pitampura","Prashant Vihar":"Haiderpur Village","Delhi Aerocity":"Aerocity","Yashobhoomi Dwarka Sector-25":"IICC convention"};
+const NOX=new Set(["Madhuban Chowk"]);
+const LINKS=[["Noida Sector 52","Noida Sector 51",10],["Dhaula Kuan","Durgabai Deshmukh South Campus",12]];
+const AQ_SLAB=[[1,10,10],[2,15,10],[6,20,15],[9,30,20],[16,40,30],[99,50,40]];
+const DM_SLAB=[[2,11,11],[5,21,11],[12,32,21],[21,43,32],[32,54,43],[1e9,64,54]];
+const RAPID_A=new Set(["Sector 55-56","Sector 54 Chowk","Sector 53-54"]),RAPID_B=new Set(["Belvedere Towers","Cyber City","Moulsari Avenue","DLF Phase 3"]);
+
+/* time helpers */
+const hm=s=>{if(typeof s==='number')return s;const[h,m]=s.split(':').map(Number);const v=h*60+m;return v<240?v+1440:v};
+const clock=m=>{m=((Math.round(m)%1440)+1440)%1440;let h=Math.floor(m/60);const mi=m%60,ap=h<12?'am':'pm';h=h%12||12;return h+':'+String(mi).padStart(2,'0')+' '+ap};
+const dur=m=>{m=Math.round(m);return m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'')};
+
+/* graph */
+const ST=new Map(),N=[],NI=new Map(),E=[],LB={};
+/* Minutes for each station-to-station hop, including the stop, separately for each direction
+   (F = towards the last station listed, B = towards the first).
+   Delhi Metro, Airport Express and Rapid Metro: fitted to ~1,250 station-to-station times from
+   delhimetrorail.info (from five points along each line, in both directions); the fit reproduces
+   that site's times to within about half a minute. Stations the site doesn't list (newest Pink ring
+   section, Magenta north section, Krishna Park Extension, Dhansa Bus Stand, Yashobhoomi) use the line's
+   average hop. Aqua Line: exact hop times in seconds from NMRC's published station timetable. */
+const HOPS={"red":{"F":[1.0,3.0,7.55,0.5,0.5,1.45,3.83,1.08,1.5,2.5,3.0,2.0,3.0,4.32,2.47,1.31,2.69,2.31,3.0,3.0,3.3,1.27,3.0,7.37,0.5,0.5,1.63,2.27],"B":[1.0,3.0,2.0,3.0,2.51,2.49,2.36,4.45,0.5,2.58,2.0,2.0,2.69,1.52,3.69,3.0,3.0,2.0,3.0,3.0,2.05,2.89,3.0,2.0,3.0,2.0,3.0,2.0]},"yellow":{"F":[3.0,4.0,3.0,1.0,4.0,2.0,2.0,2.0,3.29,1.36,2.5,3.5,1.5,2.0,3.0,3.0,5.34,0.5,1.11,2.69,2.31,2.31,2.39,3.0,3.31,2.31,5.02,1.52,3.0,1.73,3.73,6.32,0.5,0.5,1.95,2.73],"B":[1.72,2.75,1.91,0.5,0.5,5.09,2.0,1.77,1.65,2.45,3.71,2.29,2.0,2.0,3.0,3.0,2.0,1.94,3.09,3.0,2.0,2.5,2.5,2.0,3.0,3.0,2.08,3.85,2.0,2.0,4.0,4.0,2.0,3.0,3.0,2.0]},"blue":{"F":[2.0,2.0,3.0,3.0,2.0,3.0,2.0,3.0,2.0,2.0,2.0,2.89,1.05,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.71,1.19,2.0,1.92,3.08,2.0,1.31,1.69,6.75,0.5,0.75,2.0,3.18,1.09,2.0,2.27,2.29,5.38,0.5,0.5,2.84,3.0,8.0,1.49,2.0],"B":[7.96,2.23,2.53,2.24,2.49,2.27,2.24,3.0,2.0,2.23,2.77,2.03,2.62,1.34,2.32,2.68,2.66,2.66,2.68,2.0,2.32,1.68,2.66,2.34,2.05,3.41,2.5,3.5,2.0,1.5,2.5,2.0,2.5,3.5,2.0,3.0,1.8,3.41,2.0,3.0,3.0,3.0,3.0,2.0,2.0,8.0,1.0,2.0,7.0]},"bluebr":{"F":[1.0,3.95,1.02,3.43,5.44,0.5,1.82],"B":[2.0,1.0,3.0,2.25,2.63,2.0,3.0]},"green":{"F":[4.0,1.0,0.5,2.5,3.86,1.07,2.0,1.5,2.5,2.0,3.83,1.12,3.0,2.0,2.0,5.61,2.3,3.0,3.0,3.0,6.0],"B":[2.75,1.25,0.88,1.86,1.42,1.76,2.0,1.68,2.0,1.32,1.42,1.89,2.0,2.5,1.5,2.41,3.17,2.0,2.0,3.0,2.0]},"greenbr":{"F":[3.0,2.0],"B":[5.0,1.0]},"violet":{"F":[3.0,2.0,3.0,3.0,1.0,5.0,5.0,1.18,1.91,2.0,3.0,2.0,2.0,2.5,1.5,2.0,4.24,1.15,2.0,1.69,3.31,2.69,2.69,4.31,2.95,1.25,2.78,2.5,2.0,2.5,3.0,3.0,9.5],"B":[2.71,2.51,2.49,1.51,6.0,8.78,1.71,2.52,2.99,2.0,3.0,2.31,2.69,2.31,2.38,2.31,2.08,2.88,2.0,2.0,3.0,4.0,1.5,3.5,1.83,3.35,2.0,3.0,3.0,2.0,2.0,4.0,4.0]},"pink":{"F":[2.0,5.0,2.0,1.0,3.0,4.0,2.0,2.74,1.63,2.5,4.0,2.0,3.0,3.0,1.87,2.13,2.83,1.11,2.0,4.0,4.91,1.75,0.5,2.75,3.0,1.99,2.0,4.0,4.0,2.0,3.0,2.0,3.0,3.0,2.64,2.64,2.64,2.64,2.64,2.64,2.64,2.64],"B":[3.8,1.7,5.0,1.5,3.87,3.68,3.45,1.8,4.11,3.31,5.67,3.0,3.0,3.0,3.68,1.66,2.97,3.55,4.0,3.0,6.5,1.5,0.5,1.5,1.5,1.38,3.24,1.0,2.0,2.0,1.0,2.0,2.0,3.0,2.79,2.79,2.79,2.79,2.79,2.79,2.79,2.79]},"pinks":{"F":[4.25,0.5,2.25],"B":[2.0,3.0,2.0]},"magenta":{"F":[2.0,4.0,2.0,3.0,3.0,2.91,2.04,1.0,1.0,3.0,2.0,2.31,1.79,1.69,1.31,2.31,2.69,3.32,2.26,3.5,4.0,2.77,2.73,2.17,2.45],"B":[2.96,0.5,6.11,4.28,3.47,1.95,2.78,1.33,1.31,3.69,2.0,1.12,2.32,2.5,1.25,0.5,5.75,2.28,0.5,6.94,4.0,3.0,2.0,2.0,2.69]},"magentan":{"F":[2.45,2.45,2.45,2.45,2.45,2.45],"B":[2.69,2.69,2.69,2.69,2.69,2.69]},"grey":{"F":[2.0,3.0,2.5],"B":[4.0,2.0,3.0]},"ae":{"F":[2.54,6.23,10.38,5.59,4.35,5.82],"B":[4.13,7.31,9.2,5.0,3.32,5.79]},"rapid":{"F":[1.0,1.0,1.0,2.0,1.11,6.93,1.0,1.1,0.93,1.5],"B":[1.0,1.0,1.0,2.0,1.11,6.93,1.0,1.1,0.93,1.5]}};
+const AQ_HOPS=[115,110,108,99,174,129,133,159,104,120,113,140,124,132,209,113,145,137,113,107];
+const hopT=(l,km,i,back)=>l.id==='aqua'?AQ_HOPS[i]/60:HOPS[l.id]?HOPS[l.id][back?'B':'F'][i]:km/SYS[l.sys].v*60+.4;
+const node=(k,lid)=>{const id=k+'|'+lid;if(!NI.has(id)){NI.set(id,N.length);N.push({k,lid});E.push([])}return NI.get(id)};
+const skey=(n,lid)=>NOX.has(n)?n+'#'+lid:n;
+for(const l of LINES){
+  LB[l.id]=l;l.keys=l.st.map(n=>skey(n,l.id));
+  const g=l.st.length-1+(l.ring?1:0);l.gaps=l.gaps||Array(g).fill(l.gap);
+  l.cumF=[0];for(let i=1;i<l.st.length;i++)l.cumF.push(l.cumF[i-1]+hopT(l,l.gaps[i-1],i-1));
+  l.total=l.ring?l.cumF[l.st.length-1]+hopT(l,l.gaps[g-1],g-1):l.cumF[l.st.length-1];
+  l.cumB=Array(l.st.length).fill(0);{let acc=0;for(let i=g-1;i>=0;i--){acc+=hopT(l,l.gaps[i],i,1);if(l.ring?i>0:true)l.cumB[i]=acc}if(!l.ring)l.cumB[l.st.length-1]=0;else l.cumB[0]=0}
+  l.keys.forEach((k,i)=>{if(!ST.has(k))ST.set(k,{k,name:l.st[i],al:ALIAS[l.st[i]]||'',lines:[],links:[]});const s=ST.get(k);if(!s.lines.includes(l))s.lines.push(l);node(k,l.id)});
+  for(let i=0;i<g;i++){const a=node(l.keys[i],l.id),b=node(l.keys[(i+1)%l.st.length],l.id),km=l.gaps[i];E[a].push({to:b,t:hopT(l,km,i,0),km,ty:'r'});E[b].push({to:a,t:hopT(l,km,i,1),km,ty:'r'})}
+}
+{const yb=LB.blue.cumF[LB.blue.st.indexOf('Yamuna Bank')];LB.bluebr.l[0]=hm('23:00')+yb}
+for(const s of ST.values())for(const a of s.lines)for(const b of s.lines)if(a!==b){const t=a.grp&&a.grp===b.grp?4:a.sys!==b.sys?8:6;E[node(s.k,a.id)].push({to:node(s.k,b.id),t,km:0,ty:'x'})}
+for(const [p,q,t] of LINKS){const A=ST.get(p),B=ST.get(q);A.links.push(B);B.links.push(A);for(const a of A.lines)for(const b of B.lines){E[node(p,a.id)].push({to:node(q,b.id),t,km:0,ty:'x',walk:1});E[node(q,b.id)].push({to:node(p,a.id),t,km:0,ty:'x',walk:1})}}
+
+function route(fk,tk,few){
+  const n=N.length,d=new Float64Array(n).fill(Infinity),pv=new Int32Array(n).fill(-1),pe=[],done=new Uint8Array(n);
+  for(const l of ST.get(fk).lines)d[NI.get(fk+'|'+l.id)]=0;
+  for(;;){let u=-1,b=Infinity;for(let i=0;i<n;i++)if(!done[i]&&d[i]<b){b=d[i];u=i}
+    if(u<0||N[u].k===tk)break;done[u]=1;
+    for(const e of E[u]){const w=e.t+(e.ty==='x'&&few?25:0);if(d[u]+w<d[e.to]){d[e.to]=d[u]+w;pv[e.to]=u;pe[e.to]=e}}}
+  let end=-1,b=Infinity;for(const l of ST.get(tk).lines){const i=NI.get(tk+'|'+l.id);if(d[i]<b){b=d[i];end=i}}
+  if(end<0||b===Infinity)return null;
+  const path=[];for(let v=end;pv[v]>=0;v=pv[v])path.push([pv[v],v,pe[v]]);path.reverse();
+  const steps=[];let cur=null;
+  for(const [a,b2,e] of path){
+    if(e.ty==='r'){if(!cur){cur={ty:'leg',line:LB[N[b2].lid],keys:[N[a].k],hops:[],km:0,t:0};steps.push(cur)}cur.keys.push(N[b2].k);cur.hops.push(e.t);cur.km+=e.km;cur.t+=e.t}
+    else{cur=null;steps.push({ty:'x',at:N[a].k,to:N[b2].k,line:LB[N[b2].lid],t:e.t,walk:!!e.walk,sys:LB[N[a].lid].sys!==LB[N[b2].lid].sys})}
+  }
+  while(steps.length&&steps[steps.length-1].ty==='x')steps.pop();
+  while(steps.length&&steps[0].ty==='x')steps.shift();
+  for(const s of steps)if(s.ty==='leg'){const l=s.line,i0=l.keys.indexOf(s.keys[0]),i1=l.keys.indexOf(s.keys[1]);s.i0=i0;s.dir=l.ring?(i1===(i0+1)%l.st.length?0:1):(i1>i0?0:1)}
+  return steps;
+}
+/* departure of the first/last train at station index i, direction 0 = towards end of list, 1 = towards start */
+/* DMRC starts its first trains from depots along each line at about the same time, so first trains are not offset by distance */
+const depAt=(l,i,dir,kind,sun)=>{const off=dir?l.cumB[i]:l.cumF[i];if(kind==='first')return hm(sun&&l.sunF?l.sunF:l.f[dir])+(l.sys==='d'?0:off);return hm(l.l[dir])+off};
+function serviceWindow(steps,sun){
+  const legs=[],xs=[];let pend=0;
+  for(const s of steps){if(s.ty==='leg'){legs.push(s);xs.push(pend);pend=0}else pend+=s.t}
+  let t=depAt(legs[0].line,legs[0].i0,legs[0].dir,'first',sun);const fDep=t;
+  legs.forEach((g,i)=>{if(i)t=Math.max(t,depAt(g.line,g.i0,g.dir,'first',sun));t+=g.t;if(i<legs.length-1)t+=xs[i+1]});
+  const fArr=t;
+  let L=Infinity;for(let i=legs.length-1;i>=0;i--){const g=legs[i];L=Math.min(depAt(g.line,g.i0,g.dir,'last',sun),L-g.t-(i<legs.length-1?xs[i+1]:0))}
+  let a=L;legs.forEach((g,i)=>{a+=g.t+(i<legs.length-1?xs[i+1]:0)});
+  return{fDep,fArr,lDep:L,lArr:a,est:legs.some(g=>g.line.est||(g.line.id==='aqua'&&g.dir===1))};
+}
+function towards(g){const l=g.line;if(l.ring)return{ring:1,via:ST.get(g.keys[1]).name};return{term:g.dir?l.st[0]:l.st[l.st.length-1]}}
+const money=x=>'₹'+(+x.toFixed(2));
+function fares(steps,sun,card){
+  const gs=[];
+  for(const s of steps)if(s.ty==='leg'){const sys=s.line.sys,g=gs[gs.length-1];if(g&&g.sys===sys){g.km+=s.km;g.hops+=s.keys.length-1;g.last=s.keys[s.keys.length-1]}else gs.push({sys,km:s.km,hops:s.keys.length-1,first:s.keys[0],last:s.keys[s.keys.length-1]})}
+  let total=0,unk=false;
+  for(const g of gs){
+    let f=null;
+    if(g.sys==='d'){const r=DM_SLAB.find(r=>g.km<=r[0]);f=sun?r[2]:r[1];g.desc=g.km.toFixed(1)+' km'}
+    else if(g.sys==='q'){const r=AQ_SLAB.find(r=>g.hops<=r[0]);f=sun?r[2]:r[1];g.desc=g.hops+(g.hops===1?' station':' stations')}
+    else if(g.sys==='r'){const A=ST.get(g.first).name,B=ST.get(g.last).name;f=(RAPID_A.has(A)&&RAPID_B.has(B))||(RAPID_A.has(B)&&RAPID_B.has(A))?35:20;g.desc='flat fare'}
+    else{g.desc='pay at the station';unk=true}
+    if(f!=null&&card&&g.sys!=='r')f*=.9;
+    g.f=f;if(f!=null)total+=f;
+  }
+  return{gs,total,unk};
+}
+
+
+/* station details from DMRC: code|name|platforms (no>towards;...)|gates (no[*closed]:where;...) */
+const DMRC="KG|KASHMERE GATE|6>KASHMERE GATE;5>RAJA NAHAR SINGH (BALLABHGARH);4>SHAHEED STHAL ( NEW BUS ADDA);3>RITHALA;2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|8:Maharana Pratap Inter State Bus Terminal ,KASHMERE GATE;7:Maharana Pratap Inter State Bus Terminal ,KASHMERE GATE;6:Lala Hardev Sahai Marg;5:Lala Hardev Sahai Marg;4:Lala Hardev Sahai Marg;3:Lala Hardev Sahai Marg;1:Intercity Smart Bus, Flix Bus, Laxmi Holidays, R S Yadav Smart Bus Pvt. Ltd., Raj Kalpana\nCL|CIVIL LINES|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:Punjab National Bank;2:Yulu Bikes, IP College;1:Sant Parmanand Hospital\nCHK|CHANDNI CHOWK|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|5:Chandni Chowk Market, Khari Baoli, Sadar Bazar;3:Delhi Railway Station;2:S P Mukherjee Road, Delhi Public Library;1:Town Hall, Hardayal Library\nSHPK|SHASTRI PARK|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards Gandhi Nagar market;2:Towards IT Park\nTZI|TIS HAZARI|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards St. Stephen Hospital , Tis Hazari Court, Sadar bazar, Dept. of Animal Husbandary;2:Towards Lala Hardev Sahai marg , St. Stephen Hospital , Tis Hazari Court, Sadar bazar;3:Towards Metro parking, Lt. Governor Secretariat, Aruna Asaf Ali Hospital, Rajpur Road, Bou\nLLQA|LAL QUILA|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|4:Red Fort;3:Netaji Subhash Marg,Yamuna Bazar;2:Old Lajpat Rai Market;1:Netaji Subhash Marg, Gauri Shankar Mandir\nVS|VIDHAN SABHA|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:MCD Office;2:Police Station , Civil Lines;1:DMRC Officer's Quarters\nCWBR|CHAWRI BAZAR|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:Hauz Qazi, Nai Sadak;1:Ajmeri Gate\nSLAP|SEELAMPUR|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards GT Road\nPBGH|PULBANGASH|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards Roshanara Road\nJAMD|JAMA MASJID|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|4:Subhash Marg;3:Lal Quila;2:Jama Masjid;1:Kasturba Hospital\nVW|VISHWAVIDYALAYA|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Delhi University;3:Delhi University;2:Timarpur;1:Riviera Apartments\nNDI|NEW DELHI (Yellow & Airport Line)|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM;4>YASHOBHOOMI DWARKA SECTOR - 25;3>YASHOBHOOMI DWARKA SECTOR - 25;2>YASHOBHOOMI DWARKA SECTOR - 25;1>YASHOBHOOMI DWARKA SECTOR - 25|4:Airport line , Civic center;3:Kamla Market;2:New Delhi Railway Station;1:New Delhi Railway Station;6 (Airport Express):Pathway connecting to New Delhi Railway Station;5 (Airport Express):New Delhi Railway Station Road;7 (Airport Express):Bhavbhuti Marg\nWC|WELCOME|3>MAJLIS PARK;2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards GT Road;2 (Pink Line):Towards GT Road\nPRA|PRATAP NAGAR|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards Kishanganj Railway Station;2:Towards Sabzi Mandi Railway Station\nDLIG|DELHI GATE|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|5:Arun Jaitley Stadium;4:Ambedkar stadium;3:Daryaganj;2:G.B.Pant Hospital;1:Mulana Azad Medical College\nGTBR|GURU TEG BAHADUR NAGAR|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|5:New Police Line;4:Kingsway Camp Chowk;3:Hudson Lane;2:Batra Cinema;1:Outram Lines\nRCK|RAJIV CHOWK|4>DWARKA SECTOR - 21;3>NOIDA ELECTRONIC CITY;2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|8:Radial Road-3, Panchkuian Road , A Block;7:Radial Road -2, Baba Kharak Singh Marg , A Block;6:Radial Road-1, Janpath Road,Palika Bazar;5:Radial Road-1, Janpath Road, F Block;4:E Block, Barakhamba Road, Kasturba Gandhi Road;3:D Block, Carnival Cinema(Odean);2:, PVR Plaza;1:Radial Road-3, Panchkuian Road , B Block, Minto Road\nSJSU|SHIVAJI STADIUM|2>NEW DELHI (Yellow & Airport Line);1>YASHOBHOOMI DWARKA SECTOR - 25|2:BABA KHARAK SINGH MARG (Main Road Side) Exit Gate;1:BABA KHARAK SINGH MARG (Back side) Entry Gate\nSHD|SHAHDARA|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:West End (Facing GT Road), Parsavnath Mall, Vikas Cinema Mall;2:East End (Indian Railways Side)\nEANR|EAST AZAD NAGAR|2>MAJLIS PARK;1>SHIV VIHAR|2:Bhola Nath Nagar;1:East Azad Nagar\nJFRB|JAFRABAD|2>MAJLIS PARK;1>SHIV VIHAR|2:Janta Colony, BSES Office;1:Zeenat Mahal School, Jafrabad\nSHT|SHASTRI NAGAR|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards Sarai Rohilla Railway Station;2:Towards Shastri Nagar Market\nITO|ITO|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|6:Cr Building;5:Police Head Quarter;4:Passport Office;3:Ugc,Foreign Post Office;2:Mata Sundari College;1:Andhara School,Gandhi Peace Foundation\nMDTW|MODEL TOWN|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Gujranwala Town;3:Kirpal Bagh;2:Tagore Park;1:Alpana Cinema\nPTCK|PATEL CHOWK|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:Dak Bhawan, Sanchar Bhawan,NITI Bhawan;2:Jantar Mantar, State Bank of India;1:Jeevan Tara Building\nRKAM|RAMAKRISHNA ASHRAM MARG|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|5:Parking;4:Lady Harding Hospital;3:Goal Market;2:Rama Krishan Mission, New Delhi Railway Station, Paharganj\nBRKR|BARAKHAMBA ROAD|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|6:New Delhi House;5:Narayan Manzil;4:Indra Prakash Building;3:DCM/ HDFC Building;2:Kunchanjangha Building;1:Nirmal Tower\nDKV|DHAULA KUAN||1:NH-8 Side;2:Jheel Side\nMPK|MANSAROVAR PARK|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Jhilmil Industrial Area;2:GT Road Flyover, Swami Dayanand Hospital, IHBAS, GTB Hospital\nKHNA|KRISHNA NAGAR|2>MAJLIS PARK;1>SHIV VIHAR|2:Vishwas Nagar;1:Krishna Nagar Market\nMUPR|MAUJPUR-BABARPUR|4>MAUJPUR-BABARPUR;3>SHIV VIHAR;2>MAJLIS PARK;1>MAUJPUR-BABARPUR|5:Babarpur, Durgapuri;4:Babarpur, Jyoti Colony, Durgapuri;3:Kabir Nagar ,Kardam Puri;2:Vijay Park,Yamuna Vihar;1:Mujpur Chowk,Ghonda\nILOK|INDERLOK|4>BRIG. HOSHIAR SINGH;3>BRIG. HOSHIAR SINGH;2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|6:CISF Dog Training Area;5:Nirankari Bhawan;4:Cooler Market;3:Aadhaar Centre;2:D.D.A Park Shastri Nagar;1:Aadhaar Centre\nMDHS|MANDI HOUSE|4>KASHMERE GATE;3>RAJA NAHAR SINGH (BALLABHGARH);2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:National School Of Drama;3:National School Of Drama;2:Sikandara Road;1:Himachal Bhawan\nAZU|AZADPUR|4>MAJLIS PARK;3>SHIV VIHAR;2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Model Town 3;3:Lal Bagh, GT Karnal Road;2:Azadpur Bus Terminal;1:MCD Flats\nCTST|CENTRAL SECRETARIAT|4>KASHMERE GATE;3>RAJA NAHAR SINGH (BALLABHGARH);2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:India Gate;5:Rail Bhawan;4:Rastrapati Bhawan;2:Krishi Bhawan;1:Red Cross Building\nJW|JHANDEWALAN|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|1 A:Jhandewalan Devi Mandir, Bhartiya Sanskritik Academy, Jhulelal Mandir;4:Meghdoot Bhawan;3:Hanuman Mandir, Baba Lal Mandir;2:Videocon Tower;1:Jhandewalan Devi Mandir\nDACY|DELHI AEROCITY|2>NEW DELHI (Yellow & Airport Line);1>YASHOBHOOMI DWARKA SECTOR - 25|2:Aerocity Side;1:Mahipalpur Side\nDDSC|DURGABAI DESHMUKH SOUTH CAMPUS||2:Smriti vatika, San Martin park, Northern railway eco park;1:Sh. Venkateswar College, Satya Niketan\nJLML|JHILMIL|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Jhilmil Industrial Area;2:Towards GT Road\nKKDC|KARKARDUMA COURT|2>MAJLIS PARK;1>SHIV VIHAR|2:Towards Karkarduma Court;1:Garg hospital\nGKPR|GOKULPURI|2>MAJLIS PARK;1>SHIV VIHAR|2:Ambedkar College,Dayalpur police station.;1:Ganga vihar, Gokulpuri village\nAPMN|ASHOK PARK MAIN|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:SDM Office Rampura, Golden Park, Tri Nagar;1:Manohar Park, Channamal Park, Ashoka Park Extension\nKN|KANHAIYA NAGAR|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards Tota Ram Bazaar;2:Towards Tri Nagar;3:Towards JJ Colony;4:Towards MDC Complex\nPTMD|SUPREME COURT|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Skywalk;3:Open (08:00 hrs-17:00 hrs) for exit only towards Bharat Mandapam Gate No-10;2:Mathura Road;1*:Supreme Court\nJNPH|JANPATH|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|4:Eastern Court;3:Cottage Emporium, Kg Marg;2:Janpath Market;1:Western Court\nAHNR|ADARSH NAGAR|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Sarai Pipal Thala;3:Bharola Village;2:Moolchand Colony;1:Rajan Babu Road , Adarsh Nagar\nMKPR|MAJLIS PARK|4>MAJLIS PARK;3>DEEPALI CHOWK;2>YAMUNA VIHAR;1>MAUJPUR-BABARPUR|2:Exit Towards Arihant Marg;1:Entry From Arihant Marg\nSMBG|SHALIMAR BAGH|2>MAJLIS PARK;1>SHIV VIHAR|5:EPFO Office;4:Computer Market;3:Ashok Vihar;2:AG Block Shalimar Bagh;1:AG Block Shalimar Bagh\nUDB|SEVA TEERTH (earlier UDYOG BHAWAN))|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:K Kamraj Marg;3:K Kamraj Marg;2:Maulana Azad Road;1:Rafi Marg Adjacent To Udyog Bhawan\nKM|KHAN MARKET|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|4:Lok Nayak Bhawan;3:The Ambassador Hotel;2:Pandara Road, Golf Link;1:R.S. Junior Modern School, Shahjahan Road\nKB|KAROL BAGH|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|8:Pusa Road;7:Rajendra Nagar Block-C;6:Pusa Road;5:Pusa Road;4:Pusa Road;3:Pusa Road;2:Pusa Road;1:Ajmal Khan Road\nAPOT|AIRPORT (T-3)|3>NEW DELHI (Yellow & Airport Line);2>YASHOBHOOMI DWARKA SECTOR - 25|\nDLIC|DELHI CANTT.|2>MAJLIS PARK;1>SHIV VIHAR|2:Brar Square, Air Force Station, Naraina;1:Army Medical College\nSVMB|SIR M. VISHWESHWARAIAH MOTI BAGH|2>MAJLIS PARK;1>SHIV VIHAR|2:Sector -3 Shanti Niketan, Charak Palika Hospital;1:Sector 12 RK Puram\nDSG|DILSHAD GARDEN|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards Parking;2:Towards Dilshad Colony\nKKDA|KARKARDUMA|4>MAJLIS PARK;3>SHIV VIHAR;2>YAMUNA BANK;1>VAISHALI|4 (Pink Line):TOWARDS KARKARDOOMA VILLAGE;3 (Pink Line):TOWARDS KARKARDOOMA VILLAGE;2:SHANTI MUKUND;1:KARKARDOOMA VILLAGE, DIAMOND BANQUET HALL\nJIEE|JOHRI ENCLAVE|2>MAJLIS PARK;1>SHIV VIHAR|2:Near Samrat TVS Show room on Loni Road;1:Near Arora Restaurant on Loni Road\nPBGA|PUNJABI BAGH|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Punjabi Bagh Transport Nagar, Post Office, Power House;1:Punjabi Bagh Railway Colony, Jaidev Park, Bhagwan Das Nagar\nKP|KESHAV PURAM|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards Dispensary, Chotu Ram Dharamshala;2:Towards Keshav Puram Residential Area;3:Adjacent to parking;4:Towards Ashok Vihar\nIDPT|INDRAPRASTHA|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|1:Mahatma Gandhi Marg, Ip Estate;2:Near DTC headquarters\nJGPI|JAHANGIRPURI|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Jahangirpuri Industrial Area;3:Rajasthan Udyog Nagar;2:Jahangirpuri Mahendra Park , DDA Flat & A Block;1:Jahangirpuri Ram Garh , DDA Flat & A Block\nBURI|BURARI|1>MAJLIS PARK;2>MAUJPUR-BABARPUR|1*:SOUTH;2*:NORTH\nBLSW|BHALASWA|1>DEEPALI CHOWK;2>MAJLIS PARK|1:BHALASWA JAHANGIRPURI VILLAGE;2:OUTER RING ROAD,BHALASWA LAKE, GOLF COURSE, MUKUNDPUR VILLAGE\nNSHP|NETAJI SUBHASH PLACE|4>MAJLIS PARK;3>SHIV VIHAR;2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Towards LOTS entry;2:Towards Service Road;3*:Towards LOTS entry;2 (Pink Line):D-Mall;1 (Pink Line):Towards Punjab Kesari, Ring Road\nLKM|LOK KALYAN MARG|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|2:APJ ABDUL KALAM ROAD;1:NAGALAND HOUSE\nJLNS|JLN STADIUM|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|5:Dayal Singh College;4:Lodhi road, NBCC;3:JLN Stadium Gate.no 02;2:CGO Complex;1:Delhi Transco Office\nRP|RAJENDRA PLACE|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Krishi Kunj;3:Old Rajender Nagar;2:BLK Hospital;1:Rajendra Bhawan\nDSTO|DWARKA SECTOR - 21|2>VAISHALI;1>VAISHALI;4>NEW DELHI (Yellow & Airport Line);3>NEW DELHI (Yellow & Airport Line);2>YASHOBHOOMI DWARKA SECTOR - 25|2:DWARKA SECTOR 21 PICK & DROP AREA;1*:DWARKA SECTOR 21 PICK & DROP AREA;5:DWARKA SECTOR 21 PICK & DROP AREA;4:DWARKA SECTOR 21 PICK & DROP AREA;3:DWARKA SECTOR 21 PICK & DROP AREA\nNAVR|NARAINA VIHAR|2>MAJLIS PARK;1>SHIV VIHAR|2:Naraina Village;1:Road to Ring Road, DDA Market Complex\nBKCP|BHIKAJI CAMA PLACE|2>MAJLIS PARK;1>SHIV VIHAR|3:EIL Office;2:DTC Sarojini Nagar Depot;1:Subway Towards GAIL India;1:Palika Bhawan\nSHDN|SHAHEED NAGAR|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Opp. Shani Dev Mandir;2:Near Shani Dev Mandir\nPTVR|PREET VIHAR|2>DWARKA SECTOR - 21;1>VAISHALI|4:TOWARDS PNB BANK;3:TOWARDS SBI BANK;2:TOWARDS CENTRE FOR SIGHT;1:TOWARDS SHARP SIGHT CENTRE\nAVIT|ANAND VIHAR ISBT|4>MAJLIS PARK;3>SHIV VIHAR;2>DWARKA SECTOR - 21;1>VAISHALI|3:Between Anand Vihar ISBT and Railway station;2:IN FRONT OF ANAND VIHAR ISBT;1 (Pink Line):TOWARDS ANAND VIHAR ISBT\nSVVR|SHIV VIHAR|2>MAJLIS PARK;1>SHIV VIHAR|2:on Loni Road;1:on Loni Road\nPBGW|PUNJABI BAGH WEST|2>MAJLIS PARK;1>SHIV VIHAR;3>BRIG. HOSHIAR SINGH;4>INDERLOK|2:Rohtak Road,Punjabi bagh chauk, Maharaja agarsen Hospital, Shi Hans Satsang bhawan;1:Punjabi bagh Club,Traffic training park,Jaidev Park,Karampura,Iskon Punjabi Bagh,Gurudwara\nYB|YAMUNA BANK|4>DWARKA SECTOR - 21;3>VAISHALI;2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|1:Station Approch Road\nBIMR|HAIDERPUR BADLI MOR|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM;3>DEEPALI CHOWK;4>MAJLIS PARK|3:Max Hospital,Shalimar Bagh;2:Max Hospital, Shalimar Bagh Delhi;1:Badli Village\nJRMR|JHARODA MAJRA|1>MAJLIS PARK;2>MAUJPUR-BABARPUR|1*:SOUTH;2*:NORTH\nKE|KOHAT ENCLAVE|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|3:Kapil Vihar;1:Maurya Enclave;2:Kohat Enclave\nSAKP|SHAKURPUR|2>MAJLIS PARK;1>SHIV VIHAR|2:JJ Colony Shakurpur, Shakurpur Village, Shakurpur Crossing & Brittania Chowk;1:Indira Gandhi Polyclinic, Wazirpur, Prachin Shiv Mandir, Gurudwara Guru Singh Sabha\nJB|JOR BAGH|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:AAI Office, Safdarjung Airport;2:Rajiv Gandhi Bhawan;1:Jor Bagh Road, Lodhi Colony, Safdarjung Fire Station, Karbala Lane\nJGPA|JANGPURA|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:MTNL Building, JLN Stadium;2:Jangpura Extension, Bhogal, Nizamuddin Railway Station, Pant Nagar, Eros.;1:Electronic Niketan, Scope Complex, Soochna Bhawan.\nPN|PATEL NAGAR|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|6:Kailash Nursing Home;5:Near Parking;4:Shivaji Marg, Najafgarh Road;3:Domino's;2:Shivaji Marg, Najafgarh Road;1:IDFC First Bank\nDSET|DWARKA SECTOR - 8|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|1:Special Protection Group staff quarters, Dwarka Sec-21 Airport express line depot\nIICC|YASHOBHOOMI DWARKA SECTOR - 25|1>NEW DELHI (Yellow & Airport Line);2>YASHOBHOOMI DWARKA SECTOR - 25|3:On Dwarka Gurgaon Expressway near Bharthal Village out side of Yashobhoomi;1:Long subway gallery to Exhibition hall;2:Long subway gallery to Yashobhoomi Arina;4:unpaid concourse east side to Yashobhoomi convention centre;5:unpaid concourse east side to Yashobhoomi convention centre;6:unpaid concourse west side to Yashobhoomi convention centre;7:unpaid concourse west side to Yashobhoomi convention centre\nMYPI|MAYAPURI|2>MAJLIS PARK;1>SHIV VIHAR|2:DTC Mayapuri Depot;1:Priyadarshni Park\nSOJI|SAROJINI NAGAR|2>MAJLIS PARK;1>SHIV VIHAR|2(Exit only):Pilanji Gaon;1(Entry only):Sarojini Nagar Market\nRJBH|RAJ BAGH|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Shalimar Garden, East India Udyog Limited;2:Pipe Market\nNV|NIRMAN VIHAR|2>DWARKA SECTOR - 21;1>VAISHALI|5:V3S MALL;4:NIRMAN VIHAR COLONY GATE;3:NIRMAN VIHAR COLONY GATE;2:TOWARDS MANDAWLI;1:V3S MALL\nKSHI|KAUSHAMBI|2>YAMUNA BANK;1>VAISHALI|3:Passport office;2:Towards Yashoda Hospital and wave cinema;1:Towards Mohan Nagar Anand Vihar Road\nIPE|I.P. EXTENSION|2>MAJLIS PARK;1>SHIV VIHAR|2:National Victor Public School;1:Max Hospital\nESIH|ESI-BASAIDARAPUR|2>MAJLIS PARK;1>SHIV VIHAR|2:ESI Hospital,ISCKON Punjabi Bagh, Sudarshan park, Bali nagar, ESI colony, Punjabi Bagh clu;1:Rajdhani college, Shivaji college, Basaidarapur, Rajouri garden, Tagore garden EXT., Direc\nSHVP|SHIVAJI PARK|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Sakur Basti Railway Satation;1:Maharaja Agrasen Hospital\nASDM|AKSHARDHAM|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|3:Foot Over Bridge;2:Parking Side;1:East Aproach Road\nLN|LAXMI NAGAR|2>DWARKA SECTOR - 21;1>VAISHALI|5:NEAR INDUSIND BANK ATM;4:NEAR PATEL HOSPITAL;3:NEAR PATEL HOSPITAL;2:NEAR GANESH KACHUARI RED LIGHT;1:NEAR CGHS DISPENSERY\nRISE|ROHINI SECTOR - 18, 19|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|2:Paradise Apartments;1:Divyajyoti Apartments\nNPPR|NORTH PITAMPURA|1>DEEPALI CHOWK;2>MAJLIS PARK|1:Santom Hospital;2:PVR Prashant Vihar\nJPVE|JAGATPUR-WAZIRABAD|1>MAJLIS PARK;2>MAUJPUR-BABARPUR|1*:Gopalpur Crossing & Gopalpur Village;2*:Wazirabad Village, Jajatpur Village\nPTP|MADHUBAN CHOWK (earlier PITAMPURA)|3>DEEPALI CHOWK;4>MAJLIS PARK;1>RITHALA;2>SHAHEED STHAL ( NEW BUS ADDA)|4:Rohini Court;3:South Pitampura, Vishakha Enclave;2 (Under Construction):ROHINI COURT;1:ROHINI SECTOR 8\nINA|DILLI HAAT - INA|4>MAJLIS PARK;3>SHIV VIHAR;2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|6:Towards INA Market;5:Towards Dilli Haat;4:Towards Laxmibai Nagar,Sanjay Lake;3:Towards West Kidwai Nagar;2:Towards INA Market;1:Towards Dilli Haat\nLJPN|LAJPAT NAGAR|4>MAJLIS PARK;3>SHIV VIHAR;2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|5 (Pink Line):Block 1 Lajpat Nagar Iii;3:Defence Colony;2:Lajpat Nagar Market;1:Parking side-Lajpat Nagar Market\nSP|SHADIPUR|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|7:Towards Parking;6:Pandav Nagar;5:Ranjeet Nagar;4:Patel Nagar;3:Patel Nagar Police Station;2:Baljeet Nagar;1:Towards DMS Depot & DTC Bus Depot\nDSN|DWARKA SECTOR - 9|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Gas Agency;1:Sector - 23 Marble Market\nRG|RAJOURI GARDEN|4>MAJLIS PARK;3>SHIV VIHAR;2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Rajouri Garden;1:Rajouri Garden;8:Janta Market, Rajouri;7:Nazafgarh Road;6:Nazafgarh Road;5:Nazafgarh Road;4:Tdi Mall;3:Towards Parking;2 (Pink Line):Dc Office;1 (Pink Line):Ring Road\nRJNM|MAJOR MOHIT SHARMA RAJENDRA NAGAR|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Near Bikanervala;2:Near Durga Industrial Park\nVASI|VAISHALI|2>YAMUNA BANK;1>VAISHALI|3:Towards FOB;2:Towards Vaishali Sector 3,4;1:Towards Mohan Nagar Anand Vihar Road\nVNNR|MANDAWALI - WEST VINOD NAGAR|2>MAJLIS PARK;1>SHIV VIHAR|1:Delhi Jal Board\nMAPR|MADIPUR|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Railways Reservation Counter;1:Madipur Village\nMVP1|MAYUR VIHAR -I|4>MAJLIS PARK;3>SHIV VIHAR;2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4 (Pink Line):Transport Authority;3 (Pink Line):Mayur Vihar Phase 1 Infront Of Gate No 02;2:Noida Link Road;1:IFS Apartment\nSPBI|SAMAYPUR BADLI|2>SAMAYPUR - Badli Dipo;1>MILLENNIUM CITY CENTRE GURUGRAM|3:FOB Badli Railway Station;1:Badli Railway Station\nPHVR|PRASHANT VIHAR|1>DEEPALI CHOWK;2>MAJLIS PARK|1:VIPS;2:DEVENTURE HOTEL AND PETROL PUMP\nSOOG|SOORGHAT|2>MAUJPUR-BABARPUR;1>MAJLIS PARK|\nRHE|ROHINI|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|3:Sec.9, Rohini Court, Fire Station;2:SEC.7 & 8 ROHINI;1:SEC.7 & 8 ROHINI\nDPCK|DEEPALI CHOWK|1>MAJLIS PARK;2>TERMINAL 1-IGI AIRPORT|1:SARASWATI VIHAR;2:PRACHIN MAHAKALI MANDIR\nAIIMS|AIIMS|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Ring Road,Vardhman Mahavir Medical College & Safdarjung Hospital;3:Ansari Nagar West, Post Office, Vardhman Mahavir Medical College & Safdarjung Hospital;2:AIIMS Hospital, Ansari Nagar East, Yusuf Sarai;1:AIIMS Hospital, Kidwai Nagar\nSOEN|SOUTH EXTENSION|2>MAJLIS PARK;1>SHIV VIHAR|4:South Extension 2;3:South Extension 2;2:South Extension 1;1:South Extension 1\nMLCD|MOOLCHAND|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|1:Moolchand Hospital, Andrews Ganj\nVNPR|VINOBAPURI|2>MAJLIS PARK;1>SHIV VIHAR|2:Sriniwas Puri;1:Lajpat Nagar - II\nKNR|KIRTI NAGAR|4>KIRTI NAGAR;3>BRIG. HOSHIAR SINGH;2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|1:Furniture Market\nDST|DWARKA SECTOR - 10|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2 (Entry):Dwarka Court;1 (Entry):Welcome Hotel, PNB Corporate Office;3 (Exit):District court, Indira Gandhi Hospital;4 (Exit):NB , Welcome Hotel, NHAI, NCTE\nTG|TAGORE GARDEN|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:J-Block Rajori Garden,Green Flats;3:Cambridge School, Dda Flats;2:Guru Govind Singh Hospital;1:Kendriya Vidyalaya , Khyala\nRN|RAMESH NAGAR|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|5:Ramesh Nagar;4:Namdhari Colony;3:Raja Garden;2:Basai Darapur;1:Bali Nagar\nSMPK|SHYAM PARK|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Ambey Hospital, Shahibabad Police Station, Lajpat Nagar;2:LR College, Shyam Park, Diwakar Model School;3:LR College, Shyam Park, Diwakar Model School\nVENT|EAST VINOD NAGAR-MAYUR VIHAR -II|2>MAJLIS PARK;1>SHIV VIHAR|2:Sports Complex, East Vinod Nagar;1:Pocket C, East Vinod Nagar\nPVE|PASCHIM VIHAR EAST|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Ordnance Depot;1:Bharti Vidyapeeth College\nMVE|MAYUR VIHAR EXTENSION|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Club Avenue Road;1:Service lane to Sahkarita Marg\nNIZM|SARAI KALE KHAN - NIZAMUDDIN|2>MAJLIS PARK;1>SHIV VIHAR|3:Hazrat Nizamuddin Railway Station;2:Hazrat Nizamuddin Railway Station;1:Sarai Kale Khan Bus Stand\nMVPO|SHREE RAM MAYUR VIHAR MANDIR (earlier MAYUR VIHAR POCKET-1)|2>MAJLIS PARK;1>SHIV VIHAR|2:Mayur Vihar Pocket 3&4;1:Mayur Vihar Pocket 1&2\nSNVH|SONIA VIHAR|1>MAJLIS PARK;2>MAUJPUR-BABARPUR|1*:Delhi Jal Board (Emergency Tank Services), Gurudwara Nanaksar Sahab;2*:BSF Wazirabad Water Sports Club, I&FC Department Sonia Vihar, Water Treatment Plant\nRHW|DR. BABA SAHEB AMBEDKAR HOSPITAL|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|3:Unity Mall;2:Towards BR Ambedkar Hospital;1:SEC-6 ROHINI\nGNPK|GREEN PARK|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Safdarganj Enclave,Gurudwara,Arjun Nagar,Green Park Extension;3:Deer Park,Hauz Khas Village,Uphar Cinema,Gurudwara,Green Park Extension;2:Sirifort Auditorium,Nift,Hauz Khas Market,Gulmohar Enclave,Indian Oil Building;1:Yusuf Sarai,Indian Oil Building\nKHCY|KAILASH COLONY|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|2:Lal Path Lab;1:Caf\u00e9 Coffee Day\nAHRM|ASHRAM|2>MAJLIS PARK;1>SHIV VIHAR|3:Maharani Bagh;2:NAFED;1:Harinagar Ashram, TVM and RCTM\nMN|MOTI NAGAR|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Kirti Nagar;3:Kalra Hospital;2:Fun Cinema;1:Moti Nagar Market\nSRSM|SATGURU RAM SINGH MARG|2>KIRTI NAGAR;1>BRIG. HOSHIAR SINGH|1:Patel Nagar Railway Station, Prem Nagar\nDSE|DWARKA SECTOR - 11|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|1:Ambrahi Village;2:St. Gregorious School\nSN|SUBHASH NAGAR|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Police Station, Tilak Nagar;3:Meenakshi Garden;2:Pacific Mall;1:SBI, Tilak Nagar\nMNGM|MOHAN NAGAR|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Narendra Mohan Hospital, World Square Mall, Inter-State Bus Stand;2:ITS College, Mohan Nagar Bus Stand, Mohan Meakin\nTKPR|TRILOKPURI-SANJAY LAKE|2>MAJLIS PARK;1>SHIV VIHAR|2:Chand Cinema & Sanjay Lake;1:Chand Cinema & Sanjay Lake\nPVW|PASCHIM VIHAR WEST|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:PWD Office;1:Shanti Kunj Apartment\nNAGR|NEW ASHOK NAGAR|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|1:East End Appartment, Chilla Gaon, Nagarjun Appartment\nKJKS|KHAJURI KHAS|1>MAJLIS PARK;2>MAUJPUR-BABARPUR|1*:Signature Bridge;2*:Shri Ram Colony (Rajiv Nagar)\nRI|RITHALA|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|3:Towards SEC-11 ROHINI;2:Towards SEC-24 ROHINI;1:Towards SEC-5 ROHINI\nHKS|HAUZ KHAS|4>JANAKPURI WEST;3>BOTANICAL GARDEN;2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Kalu Sarai;2:Laxman Public School;1:Outer Ring Road Towards Iit;3:Shri Krishna Chaitanya Mahaprabhu marg\nNP|NEHRU PLACE|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|2:Nehru Place Market, Eros Corporate Tower\nDSW|DWARKA SECTOR - 12|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:City Centre Mall;1:Service Road\nTN|TILAK NAGAR|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Prem Nagar, DMRC Authorised Parking;3:Ashok Nagar, Fateh Nagar, Jail Road;2:Saatmanjila Temple, Central Market;1:Central Market\nATHA|ARTHALA|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Parsvnath Exotica, Arthala Peer, Commercial Tax Office;2:ITS College, Arthala Village\nPAGI|PEERAGARHI|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Udyog Nagar Industrial Area;1:Ekta Enclave\nNSFT|NOIDA SECTOR-15|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Nya Bans,Noida Sec-14/15;3:Noida Sec-2/4/6;2:Traffic Police Authority;1:Indian Oil Office\nBJPU|BHAJANPURA|1>MAJLIS PARK;2>MAUJPUR-BABARPUR|1*:Bhajanpura Market;2*:Chand Bagh\nMVNR|MALVIYA NAGAR|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:PVR Anupam Saket;3:Select City Walk Mall,Max Hospital,Saket Court;1:Mvnr Ps,Geetanjali Enclave\nIIT|IIT|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:IIT Institute;2:SDA Market;1:Rose Garden\nPSPK|PANCHSHEEL PARK|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Soami Nagar (South);2:Panchsheel Enclave, Max Hospital;1:Panchsheel Park S-Block, Savitri Nagar\nKJMD|KALKAJI MANDIR|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH);4>JANAKPURI WEST;3>BOTANICAL GARDEN|1:Block 9, Kalkaji;4:Bhairav Mandir;3:MTNL Building;2:Lotus Temple, Kalkaji Mandir\nDSTN|DWARKA SECTOR - 13|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Reliance Shopping Mall;1:Abhinav Global School\nJPE|JANAKPURI EAST|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|3:Village Nangli Jalib and Janakpuri B1,B2 Block;2:Amarleela Hospital and Bharti college;1:Mahaveer Nagar and Vikas Puri\nHDNR|HINDON RIVER|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Hindon Vihar, Nandgram;2:Sai Upvan Temple, Hindon Ghat\nUNRG|UDYOG NAGAR|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Udyog Nagar Industrial Area;1:Jwala Puri /Inder Enclave\nNSST|NOIDA SECTOR-16|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Bluedart Express Ltd, Noida Post Office, Mcdonald's;3:HCL Technology;2:World Trade Tower;1:Rajnigandha Factory\nYMVR|YAMUNA VIHAR|1>MAJLIS PARK;2>MAUJPUR-BABARPUR|1*:Noor-e-Ilahi;2*:Chand Bagh\nSAKT|SAKET|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:Cisf Camp,Saket D Block;2:Garden Of Five Senses;1:Vidya Niketan\nRKPM|R.K.PURAM|2>JANAKPURI WEST;1>BOTANICAL GARDEN|5:IIT Hostel, Ber Sarai, Central Soil & Material Research Station;4:Rose Garden & IIT;3:DDA Sports Complex Ground;2:R.K. Puram Sec. 3, R K Khanna Tennis Stadium;1:R.K. Puram Sec. 3, R K Khanna Tennis Stadium\nCDLI|CHIRAG DELHI|2>JANAKPURI WEST;1>BOTANICAL GARDEN|5:Chirag Delhi Village,Jahapanah city forest;4:Ambedkar nagar, Khanpur;3:DDA flats Masjid Moth(Ph-1&2);2:Rockland hotel;1:Chirag Delhi Village\nGDPI|GOVIND PURI|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|2:Govindpuri & Alaknanda, CR Park, Kalkaji Mandir, Desh Bandhu College.;1:B.D Chandiwala Hospital, G.B Pant Institute of Technology, Okhla Phase I,II & III, IIIT De\nNUEE|NEHRU ENCLAVE|2>JANAKPURI WEST;1>BOTANICAL GARDEN|5:Kalkaji , Veer Savarkar Govt. Sarvodaya Kanya Vidyalaya, CR Park, Deshbandhu College, Rama;4:Kalkaji , Veer Savarkar Govt. Sarvodaya Kanya Vidyalaya, CR Park, Deshbandhu College, Rama;3:Kalkaji Extention, JIMS Kalkaji, Bhairav Mandir, Kalkaji Police Station;2:Paras Cinema, Nehru Place Market, Modi Tower, International Trade Tower, Paharpur Business;1:Chirag Enclave, pamposh Enclave, Eros Intercontinental, Devika Tower, Fortis C-DAC Hospita\nOKNS|OKHLA NSIC|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:NSIC, Okhla Phase-3, Okhla Railway Station, Shambhu Dayal Bagh, Captain Gaur Marg;2:NSIC Exhibition Complex, Lotus Temple, Kalkaji Mandir;1:NSIC, Okhla Phase-3, Okhla Railway Station, Shambhu Dayal Bagh, Captain Gaur Marg\nDSFN|DWARKA SECTOR - 14|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Bharat Vihar;1:National Law University, IP University\nJPW|JANAKPURI WEST|4>BOTANICAL GARDEN;2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY;3>KRISHNA PARK EXTENSION|3:District Center,Auto Licencing office;2:Shivaji Marg,Najafgarh Road;1:Vikaspuri\nNBAA|SHAHEED STHAL ( NEW BUS ADDA)|2>SHAHEED STHAL ( NEW BUS ADDA);1>RITHALA|1:Meerut Mod, Pelican Hotel, Dewan Diagnostics;2:Red Mall, GT Road towards Mohan Nagar\nSMSM|MAHARAJA SURAJMAL STADIUM|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Maharaja Surajmal Stadium;1:Rail Neer Plant\nNSET|NOIDA SECTOR-18|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:GIP, DLF Mall;1:Atta Market\nQM|QUTAB MINAR|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|2:Anuvart Marg;1:Anuvart Marg\nMIRK|MUNIRKA|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Munirka Market, Capital Court, DDA Market, Vasant Vihar Police Station;2:CPWD Colony, Jain Mandir;1:CPWD Colony, Vivekanand Marg\nGKEI|GREATER KAILASH|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:CR Park, Greater Kailash Enclave 2, Savitri Cinema Complex;2:Pumposh Enclave, TCIL Building, Greater Kailash Enclave 1;1:Masjid Moth, DDA Flats, BSES Office\nHNOK|HARKESH NAGAR OKHLA|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|4:Harkesh Nagar, Sanjay Colony, Okhla Phase 1,2&3.;3:Harkesh Nagar, Sanjay Colony, Okhla Phase 1,2&3.;2:Harkesh Nagar, Sanjay Colony, Okhla Phase 1,2&3.;1:Shamshaan Ghat, IIIT Delhi\nIWNR|SUKHDEV VIHAR|2>BOTANICAL GARDEN;1>JANAKPURI WEST|4:Don Bosco School;3:Ardee School;2:Fortis Escort Hospital OPD;1:Fortis Escort Hospital IPD\nDW|DWARKA-KAKROLA|4>DWARKA-KAKROLA;5>DHANSA BUS STAND;2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:CRPF Quarters, Vipin Garden, Nand Vihar;1:CRPF Quarters, Kakrola Gaon;4:CRPF Quarters,Vipin Garden, Nand Vihar;3:CRPF Quarters,Vipin Garden, Nand Vihar\nUNE|UTTAM NAGAR EAST|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|3:Pankha Road;2:Pankha Road;1:Towards Dtc Bus Terminal\nKPEN|KRISHNA PARK EXTENSION|1>JANAKPURI WEST;2>KRISHNA PARK EXTENSION|1:DDA Park;2:Guru Nanak Nagar\nDBMR|DABRI MOR - JANAKPURI SOUTH|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Towards Pankha Road;2:Towards Jankapuri C-2;1:Towards Pankha Road, Outer Ring Road\nNNOI|NANGLOI|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Govt. Sarvodya Bal / Kanya Vidhalaya Nangloi, Govt Girls Sr. Sec School Nangloi;1:Kirari Mor, Delhi Police Staff Quarter\nBCGN|BOTANICAL GARDEN|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY;4>JANAKPURI WEST;3>BOTANICAL GARDEN|1:Captain Vijayant Thapar Marg;4:Multilevel parking;3:Capt. Vijyant Thapar Marg;2:Capt. Vijyant Thapar Marg\nCHTP|CHHATARPUR|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:Mg Road;2*:South West Delhi;1:Mg Road\nVTVR|VASANT VIHAR|2>JANAKPURI WEST;1>BOTANICAL GARDEN|4:Jharkhand Bhawan, Embassy of El Salvador;3:Embassy of Togo, Vasant Lok Market, JP Continental Hotel;2:Munirka Marg, JP Continental Hotel;1:Gurudwara, JP Continental Hotel\nJLA|JASOLA-APOLLO|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|2:Container Corporation of India (CONCOR), Pacific Premium Outlets, Office of DCP South East;1:Indraprasth Apollo Hospital, Jasola District Park, Netaji Subhash Sports Complex.\nJANR|JAMIA MILLIA ISLAMIA|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Tikona Park;2:Batla House;1:Jamia Millia Islamia University\nNNGI|NANGLI|2>DWARKA-KAKROLA;1>DHANSA BUS STAND|2:Ranaji Enclave, Sainik Enclave;1:Arjun Park, Indira Park, Anand Vihar, Nangli Sakrawati\nDM|DWARKA MOR|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Sewak Park Side;1:Rama Park Side\nUNW|UTTAM NAGAR WEST|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Aarya Samaj;3:Dyalsar Road;2:Dal Mil Road;1:Dal Mil Road\nDSHP|DASHRATHPURI|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Vijay Enclave;2:Sulabh International;1:Nasirpur Village\nNRSN|NANGLOI RAILWAY STATION|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Nangloi Railway Station Of Indian Railway, Govt. Boys Senior Secondary School;1:Blooming Dales School\nGEC|GOLF COURSE|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Noida golf Course;1:Arun Vihar Sector 37\nOKBS|OKHLA BIRD SANCTUARY|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Mahamaya Flyover;2:Supertech Supernova;1:Okhla Bird Sanctuary\nSLTP|SULTANPUR|3>SULTANPUR;2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|2:Mg Road;1:Sultanpur\nSKVR|SHANKAR VIHAR|2>JANAKPURI WEST;1>BOTANICAL GARDEN|2:Army Residential Area;1:Army Public School\nSTVR|SARITA VIHAR|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|2:Sarita Vihar Residential Area;1:Vodafone Office\nOVA|OKHLA VIHAR|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Abul Fazal Enclave,Hari Kothi Road;2:Okhla Head,Canal Colony;1:Jamia Nagar Police station,Okhla Head\nNFGH|NAJAFGARH|2>DWARKA-KAKROLA;1>DHANSA BUS STAND|3:Jyoti Memorial Hospital;2:Govt Boys Sr. Sec School;1:Near OPD Primary Health Care\nNWD|NAWADA|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|5:Matiyala Gaon;4:Matiyala Gaon;3:Kiran Garden;2:Nawada Gaon;1:Shyam Park\nPALM|PALAM|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Palam Village;2:Palam Colony;1:Manglapuri Bus Terminal\nRDPK|RAJDHANI PARK|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Mafinga Exam Centre;1:Timber Market;3:MG Global Exam Centre\nNCC|NOIDA CITY CENTRE|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|4:Sector 39, 41, 50 & 51;3:Logix mall side;2:Sector 39, 41, 50 & 51;1:DMRC parking side\nKIKJ|KALINDI KUNJ|2>JANAKPURI WEST;1>BOTANICAL GARDEN|1:South-West side towards Kalindi Kunj Mithapur Road\nGTNI|GHITORNI|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|2:Ghitorni Village;1:Gadaipur,DLF Farms\nIGDA|TERMINAL 1-IGI AIRPORT|2>JANAKPURI WEST;1>BOTANICAL GARDEN|3:Domestic Arrivals, Domestic Airport Police Station, G-5 Building;2:T-1 Parking, Mehram Nagar East, Domestic Departures, Dr. Bhimrao Ambedkar School;1:Mehram Nagar West, Dhaula Kuan;5:T-1 IGI Airport;4:T-1 IGI Airport, Feeder Bus available\nMETE|MOHAN ESTATE|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|2:DMRC Staff Qtr;1:Haldiram\nJLA8|JASOLA VIHAR SHAHEEN BAGH|3>BOTANICAL GARDEN;2>JANAKPURI WEST;1>BOTANICAL GARDEN|5:FOB Shaheen Bagh, Allama Shibli Nomani Marg;4:DAV School, Living Style Mall, SFS Flats, Sector 7 & 8, Jasola Vihar DDA, Jasola Pocket 1;3:Choudhary Charan Singh Udyan, Delhi Rides, Sarita Vihar,Madanpur Khadar;2:Shaheen Bagh Police station,Grave Yard, Okhla Vihar;1:Working Women's Hostel(YWCA), Good Samaritan School, HIG Flats, Sec-9A, Jasola Vihar(DDA)\nDNBT|DHANSA BUS STAND|2>DWARKA-KAKROLA;1>DHANSA BUS STAND|1:Fire Station Side;2:MCD Office;3:Dhansa Bus Stop\nSABR|SADAR BAZAR CANTONMENT|2>JANAKPURI WEST;1>BOTANICAL GARDEN|2:Dhruv Auditorium;1:Prahalad Pur Village\nMUDK|MUNDKA|3>INDERLOK;2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Metro Parking;1:Rohtak Road\nSTFN|SECTOR - 34 NOIDA|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Sector 50, 51 Side;1:Sector 34 Side\nAJG|ARJAN GARH|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|2:Gurugram Mehrauli Road Indian Meteorological Department;1:Mehrauli Gurugram Road Aya Nagar\nTKDS|TUGHLAKABAD STATION|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|1:Tughlakabad Railway Station\nMIAA|MUNDKA INDUSTRIAL AREA (MIA)|2>INDERLOK;1>BRIG. HOSHIAR SINGH|3:Mundka Depot;2:Bakkarwala;1:Bakkarwala\nSFTN|SECTOR - 52 NOIDA|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|3:Hosiyaar Pur, VDS Market, Sector 52;2:Noida Sector 51;1:52 Avenue Mall\nGE|GURU DRONACHARYA|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|2:HP Petrol Pump;1:Global Business Park\nBAPB|BADARPUR BORDER|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|2:IIHM Badarpur, Mohan Cooperative;1:Faridabad Toll Plaza\nGHEM|GHEVRA METRO STATION|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Ghevra Railway Station, Sawda Colony;1:Shri Vaishno Devi Mandir, Neelwal Gaon\nSSON|SECTOR - 61 NOIDA|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Towards Sec 71 Thana;1:Park View Apartment\nSKRP|SIKANDERPUR|2>PHASE-3;1>SECTOR 55-56;2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|6 (Rapid Metro):EMAAR Business Park Side;5 (Rapid Metro):EMAAR Business Park Side;4 (Rapid Metro):Sikanderpur Main Road;3 (Rapid Metro):Sikanderpur Main Road;2 (Rapid Metro):Sikanderpur Village Side;2:DLF City Court;1:Sahara Mall,Bristal Hotel\nSRAI|SARAI|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Near Crown Interiorz Mall;2:L&T;1:Vatika towers\nTKLM|TIKRI KALAN|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:HP Delhi Terminal and Receiving Station, Azad Hind Gram;1:Tikri Kalan Village, Shirdi Sai Temple, Prince Public School\nSFNN|SECTOR - 59 NOIDA|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Mamura Village;1:U-Flex\nMGRO|M.G. ROAD|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|2:MGF Metropolitan Mall;1:DT City Centre Mall\nPH1|PHASE-1|2>PHASE-3;1>SECTOR 55-56|2:Main Golf Course Road;1:Main Golf Course Road\nDL2|PHASE-2|2>PHASE-3;1>SECTOR 55-56|2:Towards Yadav Bus Service Side;1:Towards Building no-5\nNHPC|NHPC CHOWK|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Motor 1 (Luxury Automotive Workshop);2:Jiva Ayurveda;1:Kia Motors\nTKBR|TIKRI BORDER|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Tikri Border Toll Tax;1:Govt. Sarvodaya Kanya Vidyalaya, Govt. Boys Sr. Sec. School\nSSTN|SECTOR - 62 NOIDA|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|2:Towards Noida Sec-63;1:Towards Fortis Hospital\nIFOC|IFFCO CHOWK|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|3:Umkal Hospital;2:Iffco Tower;1:Bus Stand Towards M.G. Road\nSUL|SECTOR-42-43|2>PHASE-3;1>SECTOR 55-56|2:Main Golf Course Road;1:Main Golf Course Road\nBEL|BELVEDERE TOWERS|1>SECTOR 55-56|1:Main Road\nMMJR|MEWALA MAHARAJPUR|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Sec-43, 44, 45, Pooja Forge;2:S.R.S. IT Park, Mitra;1:Havells Chowk, Sec-30, Sec-31, Spring Field Colony\nMIEE|PANDIT SHREE RAM SHARMA|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:MIE Part A;1:MIE Part B\nNECC|NOIDA ELECTRONIC CITY|2>DWARKA SECTOR - 21;1>NOIDA ELECTRONIC CITY|3:Highway Tower, I-Thum Tower, Graphics Tower, Gol Chakkar Sec-62;2:Sec-63, H-Block Noida, SBI, PNB, HDFC Bank, Haldiram Restaurant, Ginger Hotel;1:Near DMRC Parking\nHCC|MILLENNIUM CITY CENTRE GURUGRAM|2>SAMAYPUR BADLI;1>MILLENNIUM CITY CENTRE GURUGRAM|4:Max Hospital;3:Unitech Business Park;2:Fortis Hospital;1:Fortis Hospital\nS53|SECTOR-53-54|2>PHASE-3;1>SECTOR 55-56|2:Main Golf Course Road;1:Main Golf Course Road\nGAT|CYBER CITY|1>SECTOR 55-56|2:Towards Gateway Towers;1:Cyber Hub Road\nSTTA|SECTOR-28|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Sector-27, Escorts Corp. Centre;2:Maruti Workshop, Tarang Orchid Apartments;1:Sector-28, Sector-30 Police Line\nBUSS|BAHADURGARH CITY|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:Parnala Road;1:Old Bus Stand\nAIT|SECTOR-54 CHOWK|2>PHASE-3;1>SECTOR 55-56|2:Main Golf Course Road;1:Main Golf Course Road\nMAL|MOULSARI AVENUE|1>SECTOR 55-56|1:Moulsari Avenue Road\nBKMR|BADKAL MOR|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Mathura Road towards Delhi;2:Mahindra Chlaris Apartment;1:Mathura Road towards Ballabhgarh\nCIPK|BRIG. HOSHIAR SINGH|2>INDERLOK;1>BRIG. HOSHIAR SINGH|2:IOCL Petrol Pump;1:Ch. Devilal Park\nS55|SECTOR 55-56|2>PHASE-3;1>SECTOR 55-56|2:Main Golf Course Road;1:Main Golf Course Road\nDL3|PHASE-3|1>SECTOR 55-56|2:Towards Building no-9;1:Towards U Block\nOFDB|OLD FARIDABAD|3>OLD FARIDABAD;2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:EF3 Mall;2:Main Mathura Road;1:Sec 16 Faridabad\nNCAJ|NEELAM CHOWK AJRONDA|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:18/1 Mathura Road (Opposite Neelam Chowk Ajronda);2:Crown Plaza Mall, Azad Colony;1:Lakhani Armaan, Neelam Chowk, Ajronda, Mathura Road\nBACH|BATA CHOWK|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Radisson Blu Hotel;2:Silvercity Mall;1:Eldeco Mall\nECMJ|ESCORTS MUJESAR|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Motor Repair Market;2:Main Mathura Road;1:Main Mathura Road\nNCBC|SANT SURDAS (SIHI)|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Goodyear Company;2:Main Mathura Road;1:Main Mathura Road\nBVHM|RAJA NAHAR SINGH (BALLABHGARH)|2>KASHMERE GATE;1>RAJA NAHAR SINGH (BALLABHGARH)|3:Railway Station;2:Govt. Hospital;1:Ballabgarh Bus Stand\n";
+const IP={
+route:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/>',
+list:'<circle cx="5.5" cy="6" r="1.4" fill="currentColor"/><circle cx="5.5" cy="12" r="1.4" fill="currentColor"/><circle cx="5.5" cy="18" r="1.4" fill="currentColor"/><path d="M10 6h9.5M10 12h9.5M10 18h9.5"/>',
+bm:'<path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-3.8-6 3.8v-16a1 1 0 0 1 1-1z"/>',
+swap:'<path d="M8 4v15M4.5 15.5 8 19l3.5-3.5M16 20V5M12.5 8.5 16 5l3.5 3.5"/>',
+chev:'<path d="m9 5.5 6.5 6.5L9 18.5"/>',
+down:'<path d="m5.5 9 6.5 6.5L18.5 9"/>',
+back:'<path d="M15 4.5 7.5 12l7.5 7.5"/>',
+x:'<path d="m7 7 10 10M17 7 7 17"/>'};
+const ic=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IP[n]}</svg>`;
+for(const el of document.querySelectorAll('[data-ic]'))el.innerHTML=ic(el.dataset.ic);
+
+/* match DMRC station records to this app's stations */
+const dn=s=>{let t=s.replace(/\([^)]*\)\)?/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');const m=t.match(/^sector(\d+)noida$/);return m?'noidasector'+m[1]:t};
+const DAL={gurutegbahadurnagar:'Guru Tegh Bahadur Nagar',shreerammayurviharmandir:'Shree Ram Mandir Mayur Vihar',anandviharisbt:'Anand Vihar',jafrabad:'Jaffrabad',soniavihar:'Nanaksar - Sonia Vihar',lalquila:'Lal Qila',jlnstadium:'Jawaharlal Nehru Stadium',mewalamaharajpur:'Mewla Maharajpur',santsurdas:'Sant Surdas - Sihi',ghevrametrostation:'Ghevra',brighoshiarsingh:'Brigadier Hoshiyar Singh',airport:'IGI Airport',phase1:'DLF Phase 1',phase2:'DLF Phase 2',phase3:'DLF Phase 3',samaypurbadlidipo:'Samaypur Badli'};
+const BYN=new Map();for(const s of ST.values()){const k=dn(s.name);if(!BYN.has(k))BYN.set(k,[]);BYN.get(k).push(s)}
+const toMine=raw=>{const k=dn(raw);const n=DAL[k];return n?dn(n):k};
+const INFO=new Map();/* app station name key (dn) -> {plats:[[no,targetDn]],gates:[[no,where,open]]} */
+for(const ln of DMRC.trim().split('\n')){const [code,name,pl,gt]=ln.split('|');const k=toMine(name);if(!BYN.has(k))continue;
+  const plats=(pl||'').split(';').filter(Boolean).map(x=>{const i=x.indexOf('>');return[x.slice(0,i).trim(),toMine(x.slice(i+1))]});
+  const gates=(gt||'').split(';').filter(Boolean).map(x=>{const i=x.indexOf(':');let no=x.slice(0,i).trim();const open=!no.includes('*');no=no.replace('*','').replace(/\s*\(.*?\)\s*/g,' ').trim();return[no,x.slice(i+1).replace(/^Towards\s+/i,'').replace(/^,\s*/,'').trim(),open]}).filter(g=>g[1]);
+  const seen=new Set();const ug=gates.filter(g=>{const id=g[0]+'|'+g[1];if(seen.has(id))return false;seen.add(id);return true}).sort((a,b)=>(parseFloat(a[0])||0)-(parseFloat(b[0])||0)||a[0].localeCompare(b[0]));
+  INFO.set(k,{plats,gates:ug})}
+const infoOf=k=>INFO.get(dn(ST.get(k).name));
+
+/* platform for boarding line l at index i0 heading dir: the first DMRC platform whose 'towards' station lies ahead */
+function aheadNames(l,i0,dir){
+  const n=l.st.length,out=[];const sib=LINES.filter(x=>x!==l&&x.grp&&x.grp===l.grp);
+  const push=nm=>{out.push(dn(nm));for(const s of sib){const j=s.st.indexOf(nm);if(j<0)continue;const rest=[...s.st.slice(j+1),...s.st.slice(0,j).reverse()];for(const r of rest)out.push(dn(r))}};
+  if(l.ring){for(let k=1;k<n;k++)push(l.st[(i0+(dir?-k:k)+n*2)%n])}
+  else if(dir){for(let j=i0-1;j>=0;j--)push(l.st[j])}else{for(let j=i0+1;j<n;j++)push(l.st[j])}
+  return out}
+function platformFor(g){
+  const l=g.line;
+  if(l.id==='aqua')return g.dir?'1':'2';
+  const inf=infoOf(g.keys[0]);if(!inf||!inf.plats.length)return null;
+  const ahead=aheadNames(l,g.i0,g.dir);
+  for(const nm of ahead){const m=inf.plats.filter(p=>p[1]===nm).map(p=>p[0]);const u=[...new Set(m)];if(u.length===1)return u[0];if(u.length===2)return u.join(' or ');if(u.length>2)return null}
+  return null}
+
+
+/* Aqua Line: NMRC stations have two gates; NMRC publishes a nearby landmark, not where each gate leads */
+const AQ_NEAR={"Noida Sector 51":"Skywalk to Noida Sector 52 (Blue Line)","Noida Sector 50":"Meghdootam Park","Noida Sector 76":"Ved Van Park","Noida Sector 101":"Ved Van Park","NSEZ":"Noida Special Economic Zone","Noida Sector 137":"Biodiversity Park","Noida Sector 146":"DFCCIL office","Noida Sector 148":"Central GST Office","Knowledge Park II":"India Expo Centre and Mart","GNIDA Office":"Greater Noida Authority office","Depot Station":"NMRC depot"};
+for(const nm of LB.aqua.st)INFO.set(dn(nm),{plats:[],gates:[['1','',1],['2','',1]],aqua:1,near:AQ_NEAR[nm]||''});
+function exitsHtml(k,open,label){
+  const inf=infoOf(k);if(!inf||!inf.gates.length)return '';
+  const body=inf.aqua?`<ul class="gl"><li><b>1</b><span>Entry and exit</span></li><li><b>2</b><span>Entry and exit</span></li></ul><p class="gnote">${inf.near?'Nearby: '+esc(inf.near)+'. ':''}NMRC doesn't publish where each gate leads.</p>`:`<ul class="gl">${inf.gates.map(g=>`<li class="${g[2]?'':'cl'}"><b class="num">${esc(g[0])}</b><span>${esc(g[1])}${g[2]?'':' (closed)'}</span></li>`).join('')}</ul>`;
+  if(open==='plain')return body;
+  return `<details class="ex"${open?' open':''}><summary>${esc(label)} <span>${inf.gates.length} gates ${ic('down')}</span></summary>${body}</details>`;
+}
+const short=l=>l.n.replace(/ \(.*\)/,'');
+const tiny=l=>l.n.replace(/ Line| \(.*\)/g,'');
+const uniqC=ls=>ls.filter((l,i,a)=>a.findIndex(x=>x.c===l.c)===i);
+const lineDots=s=>'<span class="dots">'+uniqC(s.lines).map(l=>`<i style="background:${l.c}"></i>`).join('')+'</span>';
+const others=(s,l)=>uniqC(s.lines.filter(x=>x.c!==l.c).concat(s.links.flatMap(x=>x.lines)));
+const xdots=ls=>ls.length?'<span class="xd" title="'+esc(ls.map(short).join(', '))+'">'+ls.map(x=>`<i style="--c:${x.c}"></i>`).join('')+'</span>':'';
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const IDX=[...ST.values()].map(s=>({s,n:norm(s.name),a:norm(s.al)}));
+function search(q){q=norm(q);if(!q)return[];const out=[];for(const it of IDX){const r=it.n.startsWith(q)?0:(' '+it.n).includes(' '+q)?1:it.n.includes(q)?2:it.a&&(' '+it.a).includes(' '+q)?3:-1;if(r>=0)out.push([r,it.s])}return out.sort((a,b)=>a[0]-b[0]||a[1].name.localeCompare(b[1].name)).slice(0,8).map(x=>x[1])}
+const subline=s=>[...new Set(s.lines.map(short))].join(', ')+(s.links.length?' · walk to '+s.links.map(x=>x.name).join(', '):'')+(s.al&&!s.name.includes(s.al)?' · '+s.al:'');
+const durA=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h} h${r?' '+r+' min':''}`:`${r} min`};
+const sel={from:null,to:null};
+const opt={few:false,sun:new Date().getDay()===0,card:!!LS.get('opt',{}).card};
+const collapsed=new Set();
+
+function setupField(id){
+  const inp=$('#'+id),ul=$('#m-'+id);let items=[],act=0;
+  const draw=()=>{ul.innerHTML=items.map((s,i)=>`<li role="option" id="${id}-o${i}" class="${i===act?'act':''}" data-i="${i}" aria-selected="${i===act}">${lineDots(s)}<span>${esc(s.name)}<small>${esc(subline(s))}</small></span></li>`).join('');inp.setAttribute('aria-expanded',items.length?'true':'false');if(items.length)inp.setAttribute('aria-activedescendant',id+'-o'+act)};
+  const pick=s=>{sel[id]=s.k;inp.value=s.name;items=[];draw();plan();if(id==='from'&&!sel.to)$('#to').focus();else inp.blur()};
+  inp.addEventListener('input',()=>{sel[id]=null;items=search(inp.value);act=0;draw()});
+  inp.addEventListener('focus',()=>inp.select());
+  inp.addEventListener('keydown',e=>{if(!items.length)return;if(e.key==='ArrowDown'){act=(act+1)%items.length;draw();e.preventDefault()}else if(e.key==='ArrowUp'){act=(act-1+items.length)%items.length;draw();e.preventDefault()}else if(e.key==='Enter'){pick(items[act]);e.preventDefault()}else if(e.key==='Escape'){items=[];draw()}});
+  inp.addEventListener('blur',()=>setTimeout(()=>{items=[];draw();if(sel[id])inp.value=ST.get(sel[id]).name},150));
+  ul.addEventListener('mousedown',e=>e.preventDefault());
+  ul.addEventListener('click',e=>{const li=e.target.closest('li');if(li)pick(items[+li.dataset.i])});
+}
+setupField('from');setupField('to');
+function setPair(f,t){sel.from=f;sel.to=t;$('#from').value=f?ST.get(f).name:'';$('#to').value=t?ST.get(t).name:'';collapsed.clear();plan()}
+const nowStr=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+$('#when').value=nowStr();
+$('#when').addEventListener('change',plan);
+$('#now').addEventListener('click',e=>{e.preventDefault();$('#when').value=nowStr();plan()});
+$('#swap').addEventListener('click',()=>setPair(sel.to,sel.from));
+$('#f').addEventListener('submit',e=>e.preventDefault());
+const sync=()=>{for(const b of document.querySelectorAll('[data-mode]'))b.setAttribute('aria-pressed',(b.dataset.mode==='few')===opt.few);$('#sun').setAttribute('aria-pressed',opt.sun);$('#card').setAttribute('aria-pressed',opt.card)};
+for(const b of document.querySelectorAll('[data-mode]'))b.addEventListener('click',()=>{opt.few=b.dataset.mode==='few';sync();plan()});
+$('#sun').addEventListener('click',()=>{opt.sun=!opt.sun;sync();plan()});
+$('#card').addEventListener('click',()=>{opt.card=!opt.card;LS.set('opt',{card:opt.card});sync();plan()});
+sync();
+
+let favs=LS.get('favs',[]),recent=LS.get('recent',[]);
+const valid=p=>Array.isArray(p)&&ST.has(p[0])&&ST.has(p[1]);favs=favs.filter(valid);recent=recent.filter(valid);
+const same=(a,b)=>a[0]===b[0]&&a[1]===b[1];
+const tripLink=(p,sub)=>`<button class="link trip" data-f="${esc(p[0])}" data-t="${esc(p[1])}"><span>${esc(ST.get(p[0]).name)} → ${esc(ST.get(p[1]).name)}${sub?`<small>${esc(sub)}</small>`:''}</span>${ic('chev')}</button>`;
+function empty(title,msg,withSug){
+  const picks=[...favs.map(p=>[p,'Saved']),...recent.filter(r=>!favs.some(f=>same(f,r))).map(p=>[p,'Recent'])].slice(0,4);
+  const ex=[["Kashmere Gate","Pari Chowk"],["Rajiv Chowk","Noida Electronic City"],["New Delhi","IGI Airport"]].map(p=>[p,'']);
+  const list=withSug?(picks.length?picks:ex):[];
+  $('#res').innerHTML=`<div class="empty"><p class="big">${esc(title)}</p><p>${esc(msg)}</p>${list.map(x=>tripLink(...x)).join('')}</div>`;
+}
+
+function plan(){
+  if(!sel.from||!sel.to){empty('Where to?','Choose two stations. You\'ll see every stop with its time, your platform, the exits, and the first and last train.',true);return}
+  LS.set('last',[sel.from,sel.to]);
+  if(sel.from===sel.to){empty('Same station','Pick a different destination.');return}
+  const steps=route(sel.from,sel.to,opt.few);
+  if(!steps){empty('No route','These stations aren\'t connected yet.');return}
+  const p=[sel.from,sel.to];recent=[p,...recent.filter(x=>!same(x,p))].slice(0,8);LS.set('recent',recent);
+  const legs=steps.filter(s=>s.ty==='leg'),xs=steps.filter(s=>s.ty==='x');
+  const total=steps.reduce((a,s)=>a+s.t,0),stops=legs.reduce((a,g)=>a+g.keys.length-1,0);
+  const fr=fares(steps,opt.sun,opt.card),win=serviceWindow(steps,opt.sun),winW=serviceWindow(steps,false),isFav=favs.some(x=>same(x,p));
+  let leave=hm($('#when').value||nowStr());if(leave>=1440)leave-=1440;
+  const leaveEff=leave<win.fDep-180&&leave<240?leave+1440:leave,start=leaveEff<win.fDep?win.fDep:leaveEff;
+  const m=Math.round(total),hh=Math.floor(m/60),mm=m%60;
+  const rib=steps.map(s=>s.ty==='leg'?`<i style="--c:${s.line.c};flex:${s.t.toFixed(1)}"></i>`:`<i class="w" style="flex:${s.t.toFixed(1)}"></i>`).join('');
+  const lg=legs.map(g=>`<span style="--c:${g.line.c}"><i></i>${esc(tiny(g.line))} ${durA(g.t)}</span>`).join('');
+  const p0=platformFor(legs[0]);
+  let h=`<div class="top"><div><p class="od">${esc(ST.get(sel.from).name)} → ${esc(ST.get(sel.to).name)}</p><p class="big num">${hh?hh+'<small>h</small>':''}${mm}<small>min</small></p><div class="span num">${clock(start)} – ${clock(start+total)}</div></div><button class="save" id="star" aria-pressed="${isFav}" aria-label="${isFav?'Remove from saved':'Save trip'}">${ic('bm')}</button></div>
+  <div class="ribbon">${rib}</div><div class="legs">${lg}</div>
+  <div class="facts num"><div><span>Fare</span><b>${money(fr.total)}${fr.unk?'+':''}</b><small>${fr.gs.length>1?fr.gs.length+' tickets':opt.card?'smart card':opt.sun?'Sunday fare':'one ticket'}</small></div><div><span>Board</span><b>${p0?'Platform '+esc(p0):esc(tiny(legs[0].line))}</b><small>${xs.length?xs.length+(xs.length===1?' change':' changes'):'no changes'}</small></div><div><span>First train</span><b>${clock(win.fDep)}</b><small>arrive ${clock(win.fArr)}</small></div><div><span>Last train</span><b>${clock(win.lDep)}</b><small>arrive ${clock(win.lArr)}</small></div></div>`;
+  if(leaveEff>win.lDep+0.5)h+=`<p class="note w">You'd miss the last connection. Leave by ${clock(win.lDep)} to finish this trip by metro tonight.</p>`;
+  else if(leaveEff<win.fDep)h+=`<p class="note">Trains on this route start at ${clock(win.fDep)}${opt.sun?' on Sundays':''}, so the times below start then.</p>`;
+  const notes=[];if(opt.sun&&win.fDep!==winW.fDep)notes.push(`Sunday: the first train is ${clock(win.fDep)} instead of ${clock(winW.fDep)}. Last trains are the same every day.`);if(win.est)notes.push('Some timings on this route are estimated.');
+  if(notes.length)h+=`<p class="note">${esc(notes.join(' '))}</p>`;
+  h+=`<h2>Stops <span class="num">${stops} stops · ${durA(total)}</span></h2>`;
+  let t=start,li=0;
+  for(let si=0;si<steps.length;si++){const s=steps[si];
+    if(s.ty==='leg'){
+      const l=s.line,dir=towards(s),n=s.keys.length-1,col=collapsed.has(li),pf=platformFor(s),lastLeg=!steps.slice(si+1).some(x=>x.ty==='leg'),nx=steps[si+1];
+      h+=`<div class="leg${col?' col':''}" style="--c:${l.c};--tx:${l.tx}" data-leg="${li}"><div class="lh"><i></i><span class="g"><b>${esc(short(l))}</b><span class="to">${pf?`<span class="pf">Platform ${esc(pf)}</span>`:''}<span>${dir.ring?'Ring, via '+esc(dir.via):'Towards '+esc(dir.term)}</span></span></span>${n>1?`<button class="disc" aria-expanded="${!col}">Ride ${n} stations${ic('down')}</button>`:'<span class="disc" style="cursor:default">Ride 1 station</span>'}</div>`;
+      s.keys.forEach((k,i)=>{const st=ST.get(k),end=i===0||i===n;if(i)t+=s.hops[i-1];
+        h+=`<div class="r${i===0?' first':''}${i===n?' last':''}${end?' end':' mid'}"><time class="num">${clock(t)}</time><span class="rl">${i?`<b class="no">${i}</b>`:''}</span><span class="nm">${esc(st.name)}${end?xdots(others(st,l)):''}</span><span class="d num">${i===0?'Board':'+'+Math.max(1,Math.round(s.hops[i-1]))+' min'}</span></div>`});
+      if(!lastLeg)h+=exitsHtml(s.keys[n],false,nx&&nx.ty==='x'&&(nx.walk||nx.sys)?'Exits to the walkway':'Exits here');
+      h+='</div>';li++;
+    }else{
+      h+=`<div class="xf"><time class="num">${clock(t)}</time><span class="rl"></span><span>${s.walk?`Walk to ${esc(ST.get(s.to).name)}`:`Change to the ${esc(short(s.line))}`} · ${s.t} min${s.sys?' · new ticket':''}</span></div>`;
+      t+=s.t;
+    }
+  }
+  {const dk=sel.to,dx=exitsHtml(dk,'plain');h+=`<h2>Exits at ${esc(ST.get(dk).name)}${dx?` <span>${infoOf(dk).gates.length} gates</span>`:''}</h2>`+(dx?`<div class="dest">${dx}</div>`:`<p class="gnote">Exit details aren't available for this station.</p>`)}
+  h+=`<h2>Fare</h2><div class="rows">`+fr.gs.map(g=>`<div class="rw"><span>${esc(SYS[g.sys].n)}, ${esc(g.desc)}</span><span class="num">${g.f==null?'Not included':money(g.f)}</span></div>`).join('')+(fr.gs.length>1?`<div class="rw tot"><span>Total</span><span class="num">${money(fr.total)}${fr.unk?' + AE':''}</span></div>`:'')+'</div>';
+  $('#res').innerHTML=h;
+  $('#star').addEventListener('click',()=>{const i=favs.findIndex(x=>same(x,p));if(i>=0)favs.splice(i,1);else favs.unshift(p);LS.set('favs',favs);const b=$('#star'),on=i<0;b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'Remove from saved':'Save trip')});
+}
+$('#res').addEventListener('click',e=>{const b=e.target.closest('.disc');if(!b)return;const c=b.closest('.leg'),k=+c.dataset.leg;c.classList.toggle('col');if(collapsed.has(k))collapsed.delete(k);else collapsed.add(k);b.setAttribute('aria-expanded',!c.classList.contains('col'))});
+document.addEventListener('click',e=>{const b=e.target.closest('.trip');if(!b)return;setPair(b.dataset.f,b.dataset.t);if(location.hash==='#saved')location.hash='plan';else if(innerWidth<1080)$('#res').scrollIntoView({behavior:'smooth',block:'start'})});
+
+function renderSaved(){
+  const item=(p,kind)=>`<div style="display:flex;align-items:center;border-top:.5px solid var(--hair)"><button class="link trip" style="border:0;flex:1" data-f="${esc(p[0])}" data-t="${esc(p[1])}"><span>${esc(ST.get(p[0]).name)} → ${esc(ST.get(p[1]).name)}<small>${esc([...new Set(ST.get(p[0]).lines.map(short))].join(', '))}</small></span></button><button class="rm" data-k="${kind}" data-f="${esc(p[0])}" data-t="${esc(p[1])}" aria-label="Remove">${ic('x')}</button></div>`;
+  const sec=(title,arr,kind,emptyMsg)=>`<h2 style="margin-top:${kind==='f'?'0':'40px'}">${title}</h2>`+(arr.length?arr.map(p=>item(p,kind)).join('')+'<div style="border-top:.5px solid var(--hair)"></div>':`<p style="color:var(--l2);margin:8px 0 0">${emptyMsg}</p>`);
+  $('#sv').innerHTML=sec('Saved trips',favs,'f','Tap the bookmark on a route to keep it here.')+sec('Recent',recent,'r','Trips you plan show up here.');
+}
+$('#v-saved').addEventListener('click',e=>{const b=e.target.closest('.rm');if(!b)return;const p=[b.dataset.f,b.dataset.t];if(b.dataset.k==='f'){favs=favs.filter(x=>!same(x,p));LS.set('favs',favs)}else{recent=recent.filter(x=>!same(x,p));LS.set('recent',recent)}renderSaved()});
+
+$('#llist').innerHTML=LINES.map(l=>`<a class="lr" href="#line-${l.id}" style="--c:${l.c}"><i></i><span class="g"><b>${esc(l.n)}</b><small>${esc(l.st[0])} – ${esc(l.ring?'around the ring':l.st[l.st.length-1])}</small></span><span class="n num">${l.st.length}</span>${ic('chev')}</a>`).join('');
+let curDir=0,curLine=null;
+$('#ldir').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b){curDir=+b.dataset.d;drawLine()}});
+function drawLine(){
+  const l=curLine,sun=opt.sun;if(!l)return;
+  const lab=d=>l.ring?(d?'Via '+l.st[l.st.length-1]:'Via '+l.st[1]):'To '+(d?l.st[0]:l.st[l.st.length-1]);
+  const km=l.gaps.reduce((a,b)=>a+b,0);
+  $('#ldt').textContent=l.n;$('#nbt').textContent=l.n;
+  $('#lds').textContent=`${l.st.length} stations · ${km.toFixed(1)} km · ${durA(l.total)}${l.ring?' around the ring':' end to end'}${sun?' · Sunday':''}${l.est?' · timings estimated':''}`;
+  $('#ldir').innerHTML=[0,1].map(d=>`<button type="button" data-d="${d}" aria-pressed="${d===curDir}">${esc(lab(d))}</button>`).join('');
+  let idx=l.st.map((_,i)=>i);if(curDir)idx=l.ring?[0,...idx.slice(1).reverse()]:idx.reverse();
+  const n=idx.length;
+  $('#lst').style.cssText=`--c:${l.c};--tx:${l.tx}`;
+  $('#lst').innerHTML=`<div class="lhd"><span>From start</span><span>First / last train</span></div>`+idx.map((i,j)=>{const s=ST.get(l.keys[i]),off=curDir?l.cumB[i]:l.cumF[i],last=j===n-1&&!l.ring,end=j===0||last;
+    return `<div class="r${j===0?' first':''}${last?' last':''}${end?' end':''}" data-k="${esc(l.keys[i])}" tabindex="0" role="button" aria-label="Plan a trip from ${esc(s.name)}"><time class="num">${j?'+'+Math.round(off)+' min':''}</time><span class="rl"><b class="no">${j+1}</b></span><span class="nm">${esc(s.name)}${xdots(others(s,l))}${(()=>{const pf=last?null:platformFor({line:l,keys:[l.keys[i]],i0:i,dir:curDir});return pf?`<span class="pp">Platform ${esc(pf)}</span>`:''})()}</span><span class="ff num">${last?'':`${clock(depAt(l,i,curDir,'first',sun))}<br><b>${clock(depAt(l,i,curDir,'last',sun))}</b>`}</span></div>`}).join('');
+}
+const pickLineStation=el=>{const k=el.dataset.k;if(!sel.from||sel.to)setPair(k,null);else setPair(sel.from,k);location.hash='plan'};
+$('#lst').addEventListener('click',e=>{const r=e.target.closest('.r');if(r)pickLineStation(r)});
+$('#lst').addEventListener('keydown',e=>{const r=e.target.closest('.r');if(r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();pickLineStation(r)}});
+
+const nb=$('#nb');let io=null;
+function view(){
+  const hsh=location.hash;let v='plan',tab='plan';
+  if(hsh==='#lines'){v='lines';tab='lines'}else if(hsh.startsWith('#line-')&&LB[hsh.slice(6)]){v='line';tab='lines';if(curLine!==LB[hsh.slice(6)]){curLine=LB[hsh.slice(6)];curDir=0}}else if(hsh==='#saved'){v='saved';tab='saved'}
+  for(const x of ['plan','lines','line','saved'])$('#v-'+x).hidden=x!==v;
+  for(const x of ['plan','lines','saved']){const a=$('#n-'+x);if(x===tab)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}
+  $('#backslot').innerHTML=v==='line'?`<a class="back" href="#lines">${ic('back')}Lines</a>`:'';
+  $('#nbt').textContent={plan:'Metro Planner',lines:'Lines',saved:'Saved',line:curLine?curLine.n:''}[v];
+  if(v==='line')drawLine();if(v==='saved')renderSaved();
+  scrollTo(0,0);
+  if(io)io.disconnect();
+  const t=$('#v-'+v+' [data-title]');
+  if('IntersectionObserver' in window&&t){io=new IntersectionObserver(([e])=>nb.classList.toggle('on',!e.isIntersecting),{rootMargin:'-44px 0px 0px 0px'});io.observe(t)}
+}
+addEventListener('hashchange',view);
+window.__test={route,platformFor,infoOf,ST,INFO,dn};
+const last=LS.get('last',null);
+if(valid(last||[]))setPair(last[0],last[1]);else plan();
+view();
+}
+</script>
+<script>
+if('serviceWorker' in navigator){
+  addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js').catch(()=>{})});
+}
+</script>
+</body>
+</html>
