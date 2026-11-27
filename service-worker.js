@@ -9,7 +9,7 @@
 // also refreshed in the background for next time, but only if the response
 // is clearly a real, same-origin, non-redirected 200 (so a login wall or
 // any other unexpected page can never silently overwrite the good cache).
-const CACHE = 'metro-planner-2026-11-25i';
+const CACHE = 'metro-planner-2026-11-27a';
 const ASSETS = [
   './',
   './index.html',
@@ -46,32 +46,30 @@ function isTrustworthy(res, req) {
 }
 
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
   const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
   const isNav = req.mode === 'navigate';
 
-  e.respondWith(
-    caches.match(req).then(cached => {
-      const refresh = fetch(req).then(res => {
-        if (isTrustworthy(res, req)) {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
-        }
-        return res;
-      }).catch(() => null);
+  // Look only in this version's cache (faster than searching every cache),
+  // and serve the app page for any navigation, whatever its query string.
+  const fromCache = caches.open(CACHE).then(c =>
+    isNav ? c.match('./index.html').then(r => r || c.match('./'))
+          : c.match(req, { ignoreSearch: true }));
 
-      if (cached) {
-        // serve instantly from cache; refresh quietly in the background
-        e.waitUntil(refresh);
-        return cached;
-      }
-
-      // nothing cached yet for this exact request — try the network once,
-      // and for a page navigation fall back to the cached app shell either way
-      return refresh.then(res => {
-        if (res) return res;
-        return isNav ? caches.match('./index.html') : new Response('', { status: 504 });
-      });
-    })
-  );
+  e.respondWith(fromCache.then(cached => {
+    if (cached) {
+      // Instant answer from the phone. Only the page itself is refreshed in
+      // the background (icons and the manifest never change between versions).
+      if (isNav) e.waitUntil(fetch('./index.html', { cache: 'no-cache' }).then(res => {
+        if (isTrustworthy(res, req)) return caches.open(CACHE).then(c => c.put('./index.html', res));
+      }).catch(() => {}));
+      return cached;
+    }
+    return fetch(req).then(res => {
+      if (isTrustworthy(res, req)) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {}); }
+      return res;
+    }).catch(() => isNav ? caches.match('./index.html') : new Response('', { status: 504 }));
+  }));
 });
